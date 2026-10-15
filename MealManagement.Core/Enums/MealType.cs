@@ -9,7 +9,7 @@ namespace MealManagement.Core.Enums
     public enum MealType
     {
         Parve,
-        Chalavi,
-        Besari
+        Dairy,
+        Meat
     }
 }

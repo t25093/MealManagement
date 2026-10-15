@@ -93,6 +93,208 @@ namespace MealManagement.Data.Migrations
                     b.HasIndex("CreatedByUserId");
 
                     b.ToTable("Dishes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "חומוס",
+                            QuantityPerPerson = 0.10000000000000001,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "טחינה",
+                            QuantityPerPerson = 0.050000000000000003,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "גפילטע פיש",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "סלט ירקות",
+                            QuantityPerPerson = 0.14999999999999999,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "סלט כרוב",
+                            QuantityPerPerson = 0.10000000000000001,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "סלט חצילים",
+                            QuantityPerPerson = 0.080000000000000002,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "עוף צלוי",
+                            QuantityPerPerson = 0.29999999999999999,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "צלי בקר",
+                            QuantityPerPerson = 0.20000000000000001,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "קציצות בשר",
+                            QuantityPerPerson = 3.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "שניצל",
+                            QuantityPerPerson = 2.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "לזניה",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "קיש בצל",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "אורז",
+                            QuantityPerPerson = 0.10000000000000001,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 14,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "קוגל תפוחי אדמה",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 15,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "קוגל ירושלמי",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 16,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "תפוחי אדמה אפויים",
+                            QuantityPerPerson = 0.20000000000000001,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 17,
+                            Category = "Dessert",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "עוגת שוקולד",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 18,
+                            Category = "Dessert",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "עוגת גבינה",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 19,
+                            Category = "Dessert",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "סלט פירות",
+                            QuantityPerPerson = 0.14999999999999999,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 20,
+                            Category = "Drink",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "מיץ ענבים",
+                            QuantityPerPerson = 0.25,
+                            Unit = "Liter"
+                        });
                 });
 
             modelBuilder.Entity("MealManagement.Core.Entities.Meal", b =>
@@ -130,6 +332,18 @@ namespace MealManagement.Data.Migrations
                     b.HasIndex("OwnerId");
 
                     b.ToTable("Meals");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventDate = new DateTime(2026, 12, 1, 17, 0, 0, 0, DateTimeKind.Utc),
+                            GuestsCount = 30,
+                            MealType = "Meat",
+                            Name = "ארוחת ערב משפחתית",
+                            OwnerId = 1
+                        });
                 });
 
             modelBuilder.Entity("MealManagement.Core.Entities.MealDish", b =>
@@ -257,6 +471,26 @@ namespace MealManagement.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreateAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "admin@meals.local",
+                            FullName = "מנהלת המערכת",
+                            PasswordHash = "$2b$11$XuY3CT.E4JB3LVUquipoXeaoDF8voHOA1hx6nBShMB6tZQfD.etxm",
+                            Role = "Admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreateAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "user@meals.local",
+                            FullName = "משתמשת לדוגמה",
+                            PasswordHash = "$2b$11$bQ5cSLxZkd1tjqGEsgqKl.r88vIa6nBg2kTWoEbP.gLo8.v3UTCpa",
+                            Role = "User"
+                        });
                 });
 
             modelBuilder.Entity("MealManagement.Core.Entities.UserDishAssignment", b =>
@@ -303,6 +537,13 @@ namespace MealManagement.Data.Migrations
                     b.HasIndex("ParticipatingMealsId");
 
                     b.ToTable("MealParticipants", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            ParticipantsId = 2,
+                            ParticipatingMealsId = 1
+                        });
                 });
 
             modelBuilder.Entity("MealManagement.Core.Entities.ChatMessage", b =>

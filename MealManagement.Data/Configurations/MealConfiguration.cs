@@ -1,4 +1,5 @@
 ﻿using MealManagement.Core.Entities;
+using MealManagement.Core.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -28,7 +29,22 @@ namespace MealManagement.Data.Configurations
 
             builder.HasMany(m => m.Participants)
                 .WithMany(u => u.ParticipatingMeals)
-                .UsingEntity(j => j.ToTable("MealParticipants"));
+            .UsingEntity(j =>
+            {
+                j.ToTable("MealParticipants");
+                j.HasData(new { ParticipantsId = 2, ParticipatingMealsId = 1 });
+            });
+
+            builder.HasData(new Meal
+            {
+                Id = 1,
+                Name = "ארוחת ערב משפחתית",
+                MealType = MealType.Meat,
+                EventDate = new DateTime(2026, 12, 1, 17, 0, 0, DateTimeKind.Utc),
+                GuestsCount = 30,
+                OwnerId = 1,
+                CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            });
         }
     }
 }
