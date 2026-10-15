@@ -7,7 +7,7 @@ using MealManagement.Core.Settings;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
-namespace MealManagement.Service.Security
+namespace MealManagement.Service.Services
 {
     public class TokenService : ITokenService
     {
@@ -25,7 +25,7 @@ namespace MealManagement.Service.Security
                 new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new(JwtRegisteredClaimNames.Email, user.Email),
                 new(JwtRegisteredClaimNames.Name, user.FullName),
-                new(ClaimTypes.Role, user.Role.ToString()),
+                new("role", user.Role.ToString()),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 

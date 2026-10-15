@@ -176,7 +176,7 @@ namespace MealManagement.Service.Services
             if (dish.Category != mealDish.Category)
                 throw new BusinessRuleException("המאכל שנבחר אינו מתאים לסוג המנה");
 
-            if (!KashrutRules.IsAllowed(mealDish.Meal.MealType, dish.KashrutType))
+            if (!KashrutRules.IsAllowed(mealDish.Meal.MealType, dish.KosherType))
                 throw new BusinessRuleException($"המאכל \"{dish.Name}\" אינו מתאים לסוג הכשרות של הארוחה");
 
             mealDish.Dish = dish;

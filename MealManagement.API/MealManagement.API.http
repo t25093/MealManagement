@@ -1,6 +1,510 @@
-@MealManagement.API_HostAddress = http://localhost:5062
+### =====================================================================
+### MealManagement API – בקשות לבדיקה ידנית
+### Visual Studio 2022 (17.12 ומעלה): ליד כל בקשה מופיע "Send request".
+### מריצים לפי הסדר מלמעלה למטה: בקשות מאוחרות משתמשות בערכים מבקשות קודמות
+### (token, mealId, mealDishId וכו') דרך שמות שמוגדרים ב-# @name.
+### =====================================================================
 
-GET {{MealManagement.API_HostAddress}}/weatherforecast/
-Accept: application/json
+@base = https://localhost:7012
+
+# להחליף בפרטי ה-Admin מה-Seed
+@adminEmail = admin@meals.local
+@adminPassword = Admin123!
+
+# סיסמה משותפת למשתמשות הבדיקה
+@password = Test123!
+
+# להחליף בכל הרצה מלאה חדשה, כדי שההרשמה לא תיכשל ב-409
+@run = 1
+
+# מזהה של מאכל מה-Seed שמתאים לארוחה חלבית (לבדוק ב-GET /api/dishes)
+@dairyDishId = 1
+
+
+### =====================================================================
+### 1. Auth ו-Users
+### =====================================================================
+
+### 1.1 הרשמה: א' (בעלת ארוחה)  ? 201
+# @name regA
+POST {{base}}/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "בדיקה א",
+  "email": "a{{run}}@test.local",
+  "password": "{{password}}"
+}
+
+### 1.2 אותה הרשמה שוב  ? 409
+POST {{base}}/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "בדיקה א",
+  "email": "a{{run}}@test.local",
+  "password": "{{password}}"
+}
+
+### 1.3 הרשמה לא תקינה  ? 400 עם errors
+POST {{base}}/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "",
+  "email": "not-an-email",
+  "password": "123"
+}
+
+### 1.4 התחברות עם סיסמה שגויה  ? 401
+POST {{base}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "a{{run}}@test.local",
+  "password": "wrong-password"
+}
+
+### 1.5א הרשמה: ב' (משתתפת)  ? 201
+# @name regB
+POST {{base}}/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "בדיקה ב",
+  "email": "b{{run}}@test.local",
+  "password": "{{password}}"
+}
+
+### 1.5ב הרשמה: ג' (זרה)  ? 201
+# @name regC
+POST {{base}}/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "בדיקה ג",
+  "email": "c{{run}}@test.local",
+  "password": "{{password}}"
+}
+
+### התחברות Admin  ? 200
+# @name loginAdmin
+POST {{base}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+### ה-tokens נשלפים מהתשובות של ההרשמות וה-login
+@tokenA = {{regA.response.body.$.token}}
+@tokenB = {{regB.response.body.$.token}}
+@tokenC = {{regC.response.body.$.token}}
+@tokenAdmin = {{loginAdmin.response.body.$.token}}
+@userIdB = {{regB.response.body.$.user.id}}
+
+### 1.6 הפרטים שלי (א')  ? 200
+GET {{base}}/api/users/me
+Authorization: Bearer {{tokenA}}
+
+### 1.7 בלי token  ? 401
+GET {{base}}/api/users/me
+
+### 1.8 רשימת משתמשות כמשתמשת רגילה  ? 403
+GET {{base}}/api/users
+Authorization: Bearer {{tokenA}}
+
+### 1.9 רשימת משתמשות כ-Admin  ? 200
+GET {{base}}/api/users?page=1&pageSize=10
+Authorization: Bearer {{tokenAdmin}}
+
+
+### =====================================================================
+### 2. Dishes
+### =====================================================================
+
+### 2.1 כל המאכלים  ? 200
+GET {{base}}/api/dishes
+Authorization: Bearer {{tokenA}}
+
+### 2.2 חיפוש וסינון  ? 200
+GET {{base}}/api/dishes?Search=ק&PageSize=5&SortBy=name
+Authorization: Bearer {{tokenA}}
+
+### 2.4 מאכל שלא קיים  ? 404 (ProblemDetails עם correlationId)
+GET {{base}}/api/dishes/99999
+Authorization: Bearer {{tokenA}}
+
+### 2.5 הוספת מאכל  ? 201 + Location
+# @name newDish
+POST {{base}}/api/dishes
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "name": "פשטידת בדיקה {{run}}",
+  "category": "Main",
+  "kashrutType": "Dairy",
+  "quantityPerPerson": 0.2,
+  "unit": "Kg"
+}
+
+@newDishId = {{newDish.response.body.$.id}}
+
+### 2.6 אותו מאכל שוב  ? 409
+POST {{base}}/api/dishes
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "name": "פשטידת בדיקה {{run}}",
+  "category": "Main",
+  "kashrutType": "Dairy",
+  "quantityPerPerson": 0.2,
+  "unit": "Kg"
+}
+
+### 2.7 עדכון כמשתמשת רגילה  ? 403
+PUT {{base}}/api/dishes/{{newDishId}}
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "name": "פשטידת בדיקה {{run}} מעודכנת",
+  "category": "Main",
+  "kashrutType": "Dairy",
+  "quantityPerPerson": 0.25,
+  "unit": "Kg"
+}
+
+### 2.8 עדכון כ-Admin  ? 204
+PUT {{base}}/api/dishes/{{newDishId}}
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "name": "פשטידת בדיקה {{run}} מעודכנת",
+  "category": "Main",
+  "kashrutType": "Dairy",
+  "quantityPerPerson": 0.25,
+  "unit": "Kg"
+}
+
+### 2.9 מחיקה כ-Admin  ? 204
+DELETE {{base}}/api/dishes/{{newDishId}}
+Authorization: Bearer {{tokenAdmin}}
+
+
+### =====================================================================
+### 3. Meals ומשתתפות
+### =====================================================================
+
+### 3.1 יצירת ארוחה (א')  ? 201
+# @name newMeal
+POST {{base}}/api/meals
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "name": "ארוחת בדיקה {{run}}",
+  "mealType": "Dairy",
+  "eventDate": "2026-12-01T18:00:00Z",
+  "guestsCount": 10,
+  "menuItems": []
+}
+
+@mealId = {{newMeal.response.body.$.id}}
+
+### 3.2 פרטי הארוחה  ? 200, isOwner: true
+GET {{base}}/api/meals/{{mealId}}
+Authorization: Bearer {{tokenA}}
+
+### 3.3 עדכון שם בלבד (PATCH)  ? 204
+PATCH {{base}}/api/meals/{{mealId}}
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "name": "ארוחת בדיקה {{run}} – שם חדש"
+}
+
+### 3.4 הוספת ב' כמשתתפת  ? 201
+POST {{base}}/api/meals/{{mealId}}/participants
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "email": "b{{run}}@test.local"
+}
+
+### 3.5 אותה משתתפת שוב  ? 409
+POST {{base}}/api/meals/{{mealId}}/participants
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "email": "b{{run}}@test.local"
+}
+
+### 3.6 אימייל שלא קיים  ? 404
+POST {{base}}/api/meals/{{mealId}}/participants
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "email": "nobody{{run}}@test.local"
+}
+
+### 3.7 זרה צופה בארוחה  ? 403
+GET {{base}}/api/meals/{{mealId}}
+Authorization: Bearer {{tokenC}}
+
+### 3.8 ב': ארוחות שאני משתתפת בהן  ? 200, הארוחה ברשימה
+GET {{base}}/api/meals?Role=participant
+Authorization: Bearer {{tokenB}}
+
+### 3.9 משתתפת מוחקת ארוחה  ? 403
+DELETE {{base}}/api/meals/{{mealId}}
+Authorization: Bearer {{tokenB}}
+
+
+### =====================================================================
+### 4. MealDishes
+### =====================================================================
+
+### 4.1 הוספת מנה מוגדרת  ? 201, requiredQuantity = כמות לאדם × 10
+# @name newMealDish
+POST {{base}}/api/meals/{{mealId}}/dishes
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "dishId": {{dairyDishId}},
+  "category": "Main"
+}
+
+@mealDishId = {{newMealDish.response.body.$.id}}
+
+### 4.2 הוספת מנה בלתי מוגדרת  ? 201
+# @name openMealDish
+POST {{base}}/api/meals/{{mealId}}/dishes
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "dishId": null,
+  "category": "Dessert"
+}
+
+@openMealDishId = {{openMealDish.response.body.$.id}}
+
+### 4.4 משתתפת מוסיפה מנה  ? 403
+POST {{base}}/api/meals/{{mealId}}/dishes
+Authorization: Bearer {{tokenB}}
+Content-Type: application/json
+
+{
+  "dishId": null,
+  "category": "Salad"
+}
+
+### 4.5 כל המנות  ? 200
+GET {{base}}/api/meals/{{mealId}}/dishes
+Authorization: Bearer {{tokenB}}
+
+### 4.6 רק מנות פתוחות  ? 200
+GET {{base}}/api/meals/{{mealId}}/dishes?status=open
+Authorization: Bearer {{tokenB}}
+
+### 4.7 status לא חוקי  ? 400
+GET {{base}}/api/meals/{{mealId}}/dishes?status=xyz
+Authorization: Bearer {{tokenB}}
+
+
+### =====================================================================
+### 5. Assignments ?
+### לפני 5.3–5.4: לבדוק ב-4.5 כמה נדרש (requiredQuantity) ולהתאים את הכמויות
+### =====================================================================
+
+### 5.1 ב' לוקחת 1  ? 201
+# @name takeB
+POST {{base}}/api/meals/{{mealId}}/dishes/{{mealDishId}}/assignments
+Authorization: Bearer {{tokenB}}
+Content-Type: application/json
+
+{
+  "quantity": 1
+}
+
+@assignmentB = {{takeB.response.body.$.id}}
+
+### 5.3 א' לוקחת יותר ממה שנותר  ? 409 "נותרו רק X"
+POST {{base}}/api/meals/{{mealId}}/dishes/{{mealDishId}}/assignments
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "quantity": 100000
+}
+
+### 5.6 זרה לוקחת  ? 403
+POST {{base}}/api/meals/{{mealId}}/dishes/{{mealDishId}}/assignments
+Authorization: Bearer {{tokenC}}
+Content-Type: application/json
+
+{
+  "quantity": 1
+}
+
+### 5.8 מנה בלתי מוגדרת בלי בחירת מאכל  ? 400
+POST {{base}}/api/meals/{{mealId}}/dishes/{{openMealDishId}}/assignments
+Authorization: Bearer {{tokenB}}
+Content-Type: application/json
+
+{
+  "quantity": 1
+}
+
+### 5.9 כל הלקיחות בארוחה  ? 200
+GET {{base}}/api/meals/{{mealId}}/assignments
+Authorization: Bearer {{tokenB}}
+
+### 5.10 זרה מבטלת לקיחה של ב'  ? 403
+DELETE {{base}}/api/meals/{{mealId}}/assignments/{{assignmentB}}
+Authorization: Bearer {{tokenC}}
+
+### 5.11 ב' מבטלת את הלקיחה שלה  ? 204
+DELETE {{base}}/api/meals/{{mealId}}/assignments/{{assignmentB}}
+Authorization: Bearer {{tokenB}}
+
+### 5.13 הגדלת מספר האורחים  ? 204, requiredQuantity גדל
+PATCH {{base}}/api/meals/{{mealId}}
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "guestsCount": 20
+}
+
+### ? הדגמת 409 ידנית: שתי לקיחות של כל הכמות שנותרה
+### (תמיד: הראשונה 201, השנייה 409. התנגשות xmin אמיתית נבדקת בשלב 9.2)
+### להחליף את 4 בכמות שנותרה בפועל (remainingQuantity ב-4.5)
+POST {{base}}/api/meals/{{mealId}}/dishes/{{mealDishId}}/assignments
+Authorization: Bearer {{tokenB}}
+Content-Type: application/json
+
+{
+  "quantity": 4
+}
 
 ###
+POST {{base}}/api/meals/{{mealId}}/dishes/{{mealDishId}}/assignments
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "quantity": 4
+}
+
+
+### =====================================================================
+### 6. Messages
+### =====================================================================
+
+### 6.1 ב' שולחת הודעה  ? 201
+# @name msgB
+POST {{base}}/api/meals/{{mealId}}/messages
+Authorization: Bearer {{tokenB}}
+Content-Type: application/json
+
+{
+  "content": "שלום, אני מביאה את הפשטידה"
+}
+
+@msgBId = {{msgB.response.body.$.id}}
+
+### 6.2 א' שולחת הודעה  ? 201
+POST {{base}}/api/meals/{{mealId}}/messages
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "content": "מצוין, תודה"
+}
+
+### 6.3 הודעה ריקה  ? 400
+POST {{base}}/api/meals/{{mealId}}/messages
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "content": ""
+}
+
+### 6.4 כל ההודעות  ? 200
+GET {{base}}/api/meals/{{mealId}}/messages
+Authorization: Bearer {{tokenB}}
+
+### 6.5 רק הודעות חדשות (polling)  ? 200, רק ההודעה של א'
+GET {{base}}/api/meals/{{mealId}}/messages?afterId={{msgBId}}
+Authorization: Bearer {{tokenB}}
+
+### 6.6 זרה  ? 403
+GET {{base}}/api/meals/{{mealId}}/messages
+Authorization: Bearer {{tokenC}}
+
+
+### =====================================================================
+### 7. Recipes
+### =====================================================================
+
+### 7.1 ב' מוסיפה מתכון  ? 201
+# @name recipeB
+POST {{base}}/api/meals/{{mealId}}/recipes
+Authorization: Bearer {{tokenB}}
+Content-Type: application/json
+
+{
+  "title": "פשטידת ירקות",
+  "content": "3 ביצים, 2 כוסות ירקות, כוס גבינה. אופים 40 דקות ב-180 מעלות."
+}
+
+@recipeBId = {{recipeB.response.body.$.id}}
+
+### 7.2 רשימת מתכונים  ? 200
+GET {{base}}/api/meals/{{mealId}}/recipes
+Authorization: Bearer {{tokenA}}
+
+### 7.3 זרה  ? 403
+GET {{base}}/api/meals/{{mealId}}/recipes
+Authorization: Bearer {{tokenC}}
+
+### 7.4 זרה מוחקת  ? 403
+DELETE {{base}}/api/meals/{{mealId}}/recipes/{{recipeBId}}
+Authorization: Bearer {{tokenC}}
+
+### 7.5 בעלת הארוחה מוחקת  ? 204
+DELETE {{base}}/api/meals/{{mealId}}/recipes/{{recipeBId}}
+Authorization: Bearer {{tokenA}}
+
+
+### =====================================================================
+### 8. ניקוי
+### =====================================================================
+
+### 8.1 הסרת ב' מהארוחה  ? 204
+DELETE {{base}}/api/meals/{{mealId}}/participants/{{userIdB}}
+Authorization: Bearer {{tokenA}}
+
+### 8.2 ב' כבר לא משתתפת  ? 403
+GET {{base}}/api/meals/{{mealId}}
+Authorization: Bearer {{tokenB}}
+
+### 8.3 Admin מוחקת את הארוחה  ? 204
+DELETE {{base}}/api/meals/{{mealId}}
+Authorization: Bearer {{tokenAdmin}}
+
+### 8.4 הארוחה לא קיימת  ? 404
+GET {{base}}/api/meals/{{mealId}}
+Authorization: Bearer {{tokenA}}
