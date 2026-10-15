@@ -17,7 +17,7 @@ namespace MealManagement.Core.Entities
         public Dish Dish { get; set; }
         public double RequiredQuantity { get; set; }
         public double AssignedQuantity { get; set; }
-        public MeasureUnit Version { get; set; }
+        public uint Version { get; set; }
         public DishCategory Category { get; set; }
         public List<UserDishAssignment> Assignments { get; set; } = new();
     }

@@ -1,4 +1,6 @@
 using MealManagement.Core.Settings;
+using MealManagement.Data;
+using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // הגדרות עם ולידציה בעלייה
@@ -16,6 +18,9 @@ builder.Services.AddOptions<PaginationSettings>()
 var connectionString = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException(
         "Connection string 'Default' is missing. Add it to User Secrets.");
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(connectionString));
 
 // Add services to the container.
 

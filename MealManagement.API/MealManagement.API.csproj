@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MealManagement.Core\MealManagement.Core.csproj" />
+    <ProjectReference Include="..\MealManagement.Data\MealManagement.Data.csproj" />
   </ItemGroup>
 
 </Project>
