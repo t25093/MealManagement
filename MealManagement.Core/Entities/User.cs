@@ -1,0 +1,23 @@
+﻿using MealManagement.Core.Enums;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MealManagement.Core.Entities
+{
+    public class User
+    {
+        public int Id { get; set; }
+        public string FullName { get; set; }
+        public string Email { get; set; }
+        public string PasswordHash { get; set; }
+        public UserRole Role { get; set; }
+        public DateTime CreateAt { get; set; }
+        public List<Meal> OwnedMeals { get; set; } = new();
+        public List<Meal> ParticipatingMeals { get; set; } = new();
+        public List<UserDishAssignment> Assignments { get; set; } = new();
+        public List<ChatMessage> Messages { get; set; } = new();
+    }
+}
