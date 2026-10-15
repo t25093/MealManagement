@@ -1,4 +1,21 @@
+using MealManagement.Core.Settings;
 var builder = WebApplication.CreateBuilder(args);
+
+// הגדרות עם ולידציה בעלייה
+builder.Services.AddOptions<JwtSettings>()
+    .Bind(builder.Configuration.GetSection(JwtSettings.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddOptions<PaginationSettings>()
+    .Bind(builder.Configuration.GetSection(PaginationSettings.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+// ה-connection string נבדק כבר עכשיו, וישמש ב-DbContext בשלב 4
+var connectionString = builder.Configuration.GetConnectionString("Default")
+    ?? throw new InvalidOperationException(
+        "Connection string 'Default' is missing. Add it to User Secrets.");
 
 // Add services to the container.
 
