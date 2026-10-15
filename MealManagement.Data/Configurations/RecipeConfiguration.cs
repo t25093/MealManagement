@@ -28,7 +28,7 @@ namespace MealManagement.Data.Configurations
                 .HasForeignKey(r => r.AuthorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasOne<Dish>()
+            builder.HasOne(r => r.Dish)
                 .WithMany()
                 .HasForeignKey(r => r.DishId)
                 .IsRequired(false)
