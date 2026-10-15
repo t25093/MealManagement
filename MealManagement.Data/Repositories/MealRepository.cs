@@ -66,6 +66,7 @@ namespace MealManagement.Data.Repositories
             // 5. חיתוך ושליפה
             var items = await meals
                 .Include(m => m.Owner)
+                .Include(m => m.MealDishes)
                 .Skip((query.Page - 1) * query.PageSize)
                 .Take(query.PageSize)
                 .ToListAsync(ct);

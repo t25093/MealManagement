@@ -6,6 +6,8 @@ namespace MealManagement.Core.Repositories
 {
     public interface IDishRepository
     {
+        Task<List<Dish>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken ct = default);
+
         // עם מעקב: לעדכון ולמחיקה
         Task<Dish?> GetByIdAsync(int id, CancellationToken ct = default);
 

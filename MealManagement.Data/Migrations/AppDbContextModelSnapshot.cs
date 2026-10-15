@@ -410,9 +410,6 @@ namespace MealManagement.Data.Migrations
                     b.Property<int?>("DishId")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("DishId1")
-                        .HasColumnType("integer");
-
                     b.Property<int>("MealId")
                         .HasColumnType("integer");
 
@@ -426,8 +423,6 @@ namespace MealManagement.Data.Migrations
                     b.HasIndex("AuthorId");
 
                     b.HasIndex("DishId");
-
-                    b.HasIndex("DishId1");
 
                     b.HasIndex("MealId");
 
@@ -611,14 +606,10 @@ namespace MealManagement.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MealManagement.Core.Entities.Dish", null)
+                    b.HasOne("MealManagement.Core.Entities.Dish", "Dish")
                         .WithMany()
                         .HasForeignKey("DishId")
                         .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("MealManagement.Core.Entities.Dish", "Dish")
-                        .WithMany()
-                        .HasForeignKey("DishId1");
 
                     b.HasOne("MealManagement.Core.Entities.Meal", "Meal")
                         .WithMany("Recipes")

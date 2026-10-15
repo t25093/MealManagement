@@ -25,7 +25,7 @@ namespace MealManagement.Core.DTOs
         public DishCategory? Category { get; set; }
 
         // סינון לפי כשרות (למשל להציג רק מאכלים שמתאימים לארוחה חלבית)
-        public MealType? KashrutType { get; set; }
+        public MealType? KosherType { get; set; }
 
         // "name" או "category"
         public string? SortBy { get; set; }

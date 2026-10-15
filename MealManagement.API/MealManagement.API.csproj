@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MealManagement.Core\MealManagement.Core.csproj" />
     <ProjectReference Include="..\MealManagement.Data\MealManagement.Data.csproj" />
+    <ProjectReference Include="..\MealManagement.Service\MealManagement.Service.csproj" />
   </ItemGroup>
 
 </Project>

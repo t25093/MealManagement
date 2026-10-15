@@ -1,7 +1,12 @@
+using AutoMapper;
 using MealManagement.Core.Repositories;
+using MealManagement.Core.Services;
 using MealManagement.Core.Settings;
 using MealManagement.Data;
 using MealManagement.Data.Repositories;
+using MealManagement.Service.Mapping;
+using MealManagement.Service.Security;
+using MealManagement.Service.Services;
 using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +33,14 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
+builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+builder.Services.AddOptions<JwtSettings>()
+    .Bind(builder.Configuration.GetSection(JwtSettings.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -35,7 +48,28 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddSingleton<ITokenService, TokenService>();
+
+builder.Services.AddScoped<IUserService, UserService>();
+
+builder.Services.AddScoped<IDishService, DishService>();
+
+builder.Services.AddScoped<IMealService, MealService>();
+
+builder.Services.AddScoped<IMealDishService, MealDishService>();
+
+builder.Services.AddScoped<IUserDishAssignmentService, UserDishAssignmentService>();
+
+builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IRecipeService, RecipeService>();
+
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    var mapper = app.Services.GetRequiredService<IMapper>();
+    mapper.ConfigurationProvider.AssertConfigurationIsValid();
+}
 
 // בפיתוח בלבד: יצירה ועדכון של בסיס הנתונים, כולל Seed, בעליית האפליקציה
 if (app.Environment.IsDevelopment())

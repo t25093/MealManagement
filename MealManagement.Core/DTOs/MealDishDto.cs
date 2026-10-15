@@ -15,9 +15,9 @@ namespace MealManagement.Core.DTOs
         public string? DishName { get; set; }
         public DishCategory Category { get; set; }
         public MeasureUnit? Unit { get; set; }
-        public decimal? RequiredQuantity { get; set; }
-        public decimal AssignedQuantity { get; set; }
-        public decimal? RemainingQuantity { get; set; }
+        public double? RequiredQuantity { get; set; }
+        public double AssignedQuantity { get; set; }
+        public double? RemainingQuantity { get; set; }
         public bool IsFullyAssigned { get; set; }
         public List<AssignmentDto> Assignments { get; set; } = new();
     }

@@ -13,8 +13,8 @@ namespace MealManagement.Core.DTOs
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public DishCategory Category { get; set; }
-        public MealType KashrutType { get; set; }
-        public decimal QuantityPerPerson { get; set; }
+        public MealType KosherType { get; set; }
+        public double QuantityPerPerson { get; set; }
         public MeasureUnit Unit { get; set; }
     }
 }

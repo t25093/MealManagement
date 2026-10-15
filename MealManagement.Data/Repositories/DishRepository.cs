@@ -10,6 +10,16 @@ namespace MealManagement.Data.Repositories
     {
         private readonly AppDbContext _context;
 
+        public async Task<List<Dish>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken ct = default)
+        {
+            var idList = ids.Distinct().ToList();
+
+            return await _context.Dishes
+                .AsNoTracking()
+                .Where(d => idList.Contains(d.Id))
+                .ToListAsync(ct);
+        }
+
         public DishRepository(AppDbContext context)
         {
             _context = context;
@@ -31,9 +41,9 @@ namespace MealManagement.Data.Repositories
             if (query.Category.HasValue)
                 dishes = dishes.Where(d => d.Category == query.Category.Value);
 
-            if (query.KashrutType.HasValue)
+            if (query.KosherType.HasValue)
             {
-                var kashrut = query.KashrutType.Value;
+                var kashrut = query.KosherType.Value;
                 dishes = kashrut == MealType.Parve
                     ? dishes.Where(d => d.KosherType == MealType.Parve)
                     : dishes.Where(d => d.KosherType == kashrut || d.KosherType == MealType.Parve);

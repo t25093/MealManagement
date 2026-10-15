@@ -19,10 +19,10 @@ namespace MealManagement.Core.DTOs
         public DishCategory Category { get; set; }
 
         [EnumDataType(typeof(MealType))]
-        public MealType KashrutType { get; set; }
+        public MealType KosherType { get; set; }
 
-        [Range(typeof(decimal), "0.01", "10000", ErrorMessage = "הכמות לאדם חייבת להיות גדולה מ-0")]
-        public decimal QuantityPerPerson { get; set; }
+        [Range(typeof(double), "0.01", "10000", ErrorMessage = "הכמות לאדם חייבת להיות גדולה מ-0")]
+        public double QuantityPerPerson { get; set; }
 
         [EnumDataType(typeof(MeasureUnit))]
         public MeasureUnit Unit { get; set; }

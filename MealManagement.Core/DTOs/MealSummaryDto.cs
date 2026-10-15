@@ -18,6 +18,6 @@ namespace MealManagement.Core.DTOs
         public string OwnerName { get; set; } = string.Empty;
 
         // אחוז המנות שכבר נלקחו (0 עד 100)
-        public decimal CoveragePercent { get; set; }
+        public double CoveragePercent { get; set; }
     }
 }
