@@ -640,3 +640,9 @@ Authorization: Bearer {{tokenAdmin}}
 ### 8.7 הארוחה לא קיימת  ? 404
 GET {{base}}/api/meals/{{mealId}}
 Authorization: Bearer {{tokenA}}
+
+
+###
+GET {{base}}/api/dishes
+Authorization: Bearer {{tokenA}}
+X-Correlation-ID: test-123
