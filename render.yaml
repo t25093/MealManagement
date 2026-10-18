@@ -29,7 +29,7 @@ services:
   - type: web
     name: meal-management-client
     runtime: static
-     repo: https://github.com/t25093/meal-management-client
+    repo: https://github.com/t25093/meal-management-client
     branch: main
     buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
