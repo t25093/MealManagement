@@ -6,7 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MealManagement.Tests.Concurrency
 {
-    // Integration test מול PostgreSQL אמיתי: xmin קיימת רק שם
+    // Integration test מול PostgreSQL אמיתי: xmin קיימת רק שם.
+    // כל הבדיקות מול ה-TestDb באותו Collection, כדי שלא ירוצו במקביל על אותו בסיס נתונים
+    [Collection("PostgreSQL")]
     public class MealDishConcurrencyTests : IClassFixture<TestDatabaseFixture>
     {
         private readonly TestDatabaseFixture _db;

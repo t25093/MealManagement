@@ -10,5 +10,8 @@ namespace MealManagement.Core.Services
 
         // Admin בלבד (נבדק ב-Controller)
         Task<PagedResult<UserDto>> GetAllAsync(int page, int pageSize, CancellationToken ct = default);
+
+        // משתמשת מוחקת את החשבון של עצמה, ו-Admin יכולה למחוק כל משתמשת שאינה Admin
+        Task DeleteAsync(int userId, int currentUserId, bool isAdmin, CancellationToken ct = default);
     }
 }

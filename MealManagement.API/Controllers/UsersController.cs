@@ -37,5 +37,28 @@ namespace MealManagement.API.Controllers
         {
             return Ok(await _users.GetAllAsync(page, pageSize, ct));
         }
+
+        // מחיקת החשבון של המשתמשת המחוברת
+        [HttpDelete("me")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> DeleteMe(CancellationToken ct)
+        {
+            var userId = User.GetUserId();
+            await _users.DeleteAsync(userId, userId, User.IsInRole("Admin"), ct);
+            return NoContent();
+        }
+
+        [HttpDelete("{userId:int}")]
+        [Authorize(Policy = "AdminOnly")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> Delete(int userId, CancellationToken ct)
+        {
+            await _users.DeleteAsync(userId, User.GetUserId(), isAdmin: true, ct);
+            return NoContent();
+        }
     }
 }

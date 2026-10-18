@@ -111,6 +111,32 @@ namespace MealManagement.Service.Services
             };
         }
 
+        public async Task DeleteAsync(int userId, int currentUserId, bool isAdmin, CancellationToken ct = default)
+        {
+            if (userId != currentUserId && !isAdmin)
+                throw new ForbiddenException("אפשר למחוק רק את החשבון שלך");
+
+            var user = await _users.GetForDeleteAsync(userId, ct)
+                ?? throw new NotFoundException("המשתמשת לא נמצאה");
+
+            // המנהלת היא הבעלים של מאגר המאכלים, ולכן החשבון שלה לא נמחק
+            if (user.Role == UserRole.Admin)
+                throw new ConflictException("לא ניתן למחוק חשבון של מנהלת מערכת");
+
+            var adminId = await _users.GetAnyAdminIdAsync(ct)
+                ?? throw new ConflictException("אין במערכת מנהלת שאליה יעברו המאכלים של המשתמשת");
+
+            // מנות שהמשתמשת לקחה להכין חוזרות להיות פנויות לאחרות (כמו בביטול לקיחה)
+            foreach (var assignment in user.Assignments)
+                assignment.MealDish.AssignedQuantity =
+                    Math.Max(0, assignment.MealDish.AssignedQuantity - assignment.Quantity);
+
+            await _users.RemoveWithRelatedDataAsync(user, adminId, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            _logger.LogInformation("User {UserId} deleted by user {CurrentUserId}", userId, currentUserId);
+        }
+
         private static string NormalizeEmail(string email)
         {
             return email.Trim().ToLowerInvariant();

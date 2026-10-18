@@ -1,5 +1,6 @@
 using MealManagement.Core.DTOs;
 using MealManagement.Core.Entities;
+using MealManagement.Core.Enums;
 using MealManagement.Core.Exceptions;
 using MealManagement.Core.Repositories;
 using MealManagement.Core.Services;
@@ -93,6 +94,55 @@ namespace MealManagement.Tests.Services
             Assert.NotNull(added);
             Assert.Same(meal, Assert.Single(added!.ParticipatingMeals));
             _invitations.Verify(i => i.RemoveRange(invitations), Times.Once);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteAsync_OtherUserWithoutAdmin_ThrowsForbiddenAndDoesNotSave()
+        {
+            // Act + Assert: משתמשת 5 מנסה למחוק את משתמשת 6
+            await Assert.ThrowsAsync<ForbiddenException>(() => _service.DeleteAsync(6, 5, isAdmin: false));
+
+            _users.Verify(u => u.RemoveWithRelatedDataAsync(It.IsAny<User>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task DeleteAsync_AdminAccount_ThrowsConflictAndDoesNotSave()
+        {
+            // Arrange
+            var admin = new User { Id = 1, Role = UserRole.Admin };
+            _users.Setup(u => u.GetForDeleteAsync(1, It.IsAny<CancellationToken>()))
+                  .ReturnsAsync(admin);
+
+            // Act + Assert
+            await Assert.ThrowsAsync<ConflictException>(() => _service.DeleteAsync(1, 1, isAdmin: true));
+
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task DeleteAsync_OwnAccount_ReturnsTakenQuantityAndRemovesUser()
+        {
+            // Arrange: המשתמשת לקחה 3 מתוך 5 שהוקצו במנה
+            var mealDish = new MealDish { Id = 9, RequiredQuantity = 10, AssignedQuantity = 5 };
+            var user = new User
+            {
+                Id = 5,
+                Role = UserRole.User,
+                Assignments = { new UserDishAssignment { UserId = 5, MealDish = mealDish, Quantity = 3 } }
+            };
+            _users.Setup(u => u.GetForDeleteAsync(5, It.IsAny<CancellationToken>()))
+                  .ReturnsAsync(user);
+            _users.Setup(u => u.GetAnyAdminIdAsync(It.IsAny<CancellationToken>()))
+                  .ReturnsAsync(1);
+
+            // Act
+            await _service.DeleteAsync(5, 5, isAdmin: false);
+
+            // Assert: הכמות חזרה למנה, המאכלים עוברים למנהלת 1, ושמירה אחת
+            Assert.Equal(2, mealDish.AssignedQuantity);
+            _users.Verify(u => u.RemoveWithRelatedDataAsync(user, 1, It.IsAny<CancellationToken>()), Times.Once);
             _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
     }
