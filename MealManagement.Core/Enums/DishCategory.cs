@@ -7,6 +7,8 @@
         Main,      // מנה עיקרית
         Side,      // תוספת
         Dessert,   // מנה אחרונה / קינוח
-        Drink      // שתייה
+        Drink,     // שתייה
+        CakeBar,   // בר עוגות
+        Disposables // חד פעמי
     }
 }

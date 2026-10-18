@@ -1,0 +1,43 @@
+# Blueprint ל-Render: שרת API, מסד נתונים ואתר הלקוח, הכול במסלול החינמי
+databases:
+  - name: meal-management-db
+    plan: free
+    databaseName: meal_management
+    user: meal_management
+    postgresMajorVersion: "16"
+
+services:
+  # ===== שרת ה-API (Docker) =====
+  - type: web
+    name: meal-management-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: ConnectionStrings__Default
+        fromDatabase:
+          name: meal-management-db
+          property: connectionString
+      - key: Jwt__Key
+        generateValue: true
+      - key: Cors__ClientUrl
+        value: https://meal-management-client.onrender.com
+      - key: Swagger__Enabled
+        value: "true"
+
+  # ===== אתר הלקוח (React + Vite) =====
+  - type: web
+    name: meal-management-client
+    runtime: static
+    repo: https://github.com/smalot9-byte/meal-management-client
+    branch: main
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://meal-management-api.onrender.com
+    routes:
+      # React Router: כל כתובת מחזירה את index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html

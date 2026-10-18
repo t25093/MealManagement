@@ -1,4 +1,5 @@
-using AutoMapper;
+﻿using AutoMapper;
+using MealManagement.API.Extensions;
 using MealManagement.API.Middleware;
 using MealManagement.Core.Repositories;
 using MealManagement.Core.Services;
@@ -23,7 +24,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 builder.Host.UseNLog(new NLogAspNetCoreOptions { RemoveLoggerFactoryFilter = false });
 
-// ===== Options �� ������� ������ =====
+// ===== Options עם ולידציה בעלייה =====
 builder.Services.AddOptions<JwtSettings>()
     .Bind(builder.Configuration.GetSection(JwtSettings.SectionName))
     .ValidateDataAnnotations()
@@ -37,6 +38,9 @@ builder.Services.AddOptions<PaginationSettings>()
 // ===== Data =====
 var connectionString = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("Connection string 'Default' is missing. Add it to User Secrets.");
+
+// ב-Render הכתובת מגיעה בפורמט postgresql://user:pass@host/db, וממירים אותה לפורמט של Npgsql
+connectionString = ConnectionStringHelper.ToNpgsql(connectionString);
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 
@@ -117,7 +121,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "�� ������ �� �-token ����, ��� ����� Bearer"
+        Description = "יש להדביק את ה-token בלבד, בלי המילה Bearer"
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -136,10 +140,16 @@ builder.Services.AddSwaggerGen(c =>
 var clientUrl = builder.Configuration["Cors:ClientUrl"]
                 ?? throw new InvalidOperationException("Missing 'Cors:ClientUrl' configuration");
 
+// אפשר כמה כתובות מופרדות בפסיק, למשל המחשב המקומי וגם האתר ב-Render
+var clientUrls = clientUrl
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .Select(url => url.TrimEnd('/'))
+    .ToArray();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Client", policy => policy
-        .WithOrigins(clientUrl)
+        .WithOrigins(clientUrls)
         .AllowAnyHeader()
         .AllowAnyMethod()
         .WithExposedHeaders("X-Correlation-ID", "Location"));
@@ -147,28 +157,32 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// ����� AutoMapper ������
+// בדיקת AutoMapper בעלייה
 app.Services.GetRequiredService<IMapper>().ConfigurationProvider.AssertConfigurationIsValid();
 
-// Migrate ������� �-Development
-if (app.Environment.IsDevelopment())
+// Migrate אוטומטי בעלייה, גם בשרת בענן
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
 }
 
-// ===== Pipeline: ���� ���� =====
+// ===== Pipeline: הסדר קובע =====
  app.UseMiddleware<ExceptionHandlingMiddleware>();
  app.UseMiddleware<CorrelationIdMiddleware>();  
 
-if (app.Environment.IsDevelopment())
+// בענן Swagger נדלק רק כשמגדירים Swagger__Enabled=true
+if (app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("Swagger:Enabled"))
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// ב-Render ה-HTTPS מטופל לפני השרת, ולכן ההפניה נדרשת רק במחשב המקומי
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseCors("Client");
 app.UseAuthentication();
 app.UseAuthorization();

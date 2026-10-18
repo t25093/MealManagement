@@ -294,6 +294,1306 @@ namespace MealManagement.Data.Migrations
                             Name = "מיץ ענבים",
                             QuantityPerPerson = 0.25,
                             Unit = "Liter"
+                        },
+                        new
+                        {
+                            Id = 1001,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "כבד קצוץ",
+                            QuantityPerPerson = 0.050000000000000003,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 1002,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "מרק עוף",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 1003,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "סלט עוף",
+                            QuantityPerPerson = 0.10000000000000001,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 1004,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "שוקיים בתנור",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 1005,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "גולאש",
+                            QuantityPerPerson = 0.25,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 1006,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "חמין",
+                            QuantityPerPerson = 0.25,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 1007,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "אורז עם בשר טחון",
+                            QuantityPerPerson = 0.14999999999999999,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 1011,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "בורקס גבינה",
+                            QuantityPerPerson = 2.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 1012,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "סלט יווני",
+                            QuantityPerPerson = 0.14999999999999999,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 1013,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "פשטידת ירקות",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 1014,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "פסטה ברוטב שמנת",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 1015,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "בלינצ'ס גבינה",
+                            QuantityPerPerson = 2.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 1016,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "תפוחי אדמה מוקרמים",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 1017,
+                            Category = "Dessert",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "מוס שוקולד",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 1018,
+                            Category = "Drink",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "קפה קר",
+                            QuantityPerPerson = 0.25,
+                            Unit = "Liter"
+                        },
+                        new
+                        {
+                            Id = 1021,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "מטבוחה",
+                            QuantityPerPerson = 0.050000000000000003,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 1022,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "סלט חסה",
+                            QuantityPerPerson = 0.10000000000000001,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 1023,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "סלט תפוחי אדמה",
+                            QuantityPerPerson = 0.12,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 1024,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "ירקות מוקפצים",
+                            QuantityPerPerson = 0.14999999999999999,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 1025,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "קוגל אטריות",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 1026,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "שעועית ירוקה",
+                            QuantityPerPerson = 0.10000000000000001,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 1027,
+                            Category = "Dessert",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "עוגיות",
+                            QuantityPerPerson = 3.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 1028,
+                            Category = "Dessert",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "סורבה",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 1029,
+                            Category = "Drink",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "מים מינרליים",
+                            QuantityPerPerson = 0.5,
+                            Unit = "Liter"
+                        },
+                        new
+                        {
+                            Id = 1030,
+                            Category = "Drink",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "מיץ תפוזים",
+                            QuantityPerPerson = 0.25,
+                            Unit = "Liter"
+                        },
+                        new
+                        {
+                            Id = 2001,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "סיגרים בבשר",
+                            QuantityPerPerson = 2.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 2002,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "קובה",
+                            QuantityPerPerson = 2.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 2003,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "כנפיים ברוטב",
+                            QuantityPerPerson = 3.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 2004,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "מרק בקר וירקות",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2005,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "סלט פסטרמה",
+                            QuantityPerPerson = 0.10000000000000001,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2006,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "סלט עוף אסייתי",
+                            QuantityPerPerson = 0.10000000000000001,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2007,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "פשטידת בשר",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2008,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "שניצל עוף אפוי",
+                            QuantityPerPerson = 2.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 2009,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "חזה עוף בגריל",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 2010,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "פרגיות על האש",
+                            QuantityPerPerson = 0.25,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2011,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "צלי הודו",
+                            QuantityPerPerson = 0.20000000000000001,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2012,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "בשר בקר בתנור",
+                            QuantityPerPerson = 0.20000000000000001,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2013,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "קציצות עוף ברוטב",
+                            QuantityPerPerson = 3.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 2014,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "עוף בתפוזים",
+                            QuantityPerPerson = 0.29999999999999999,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2015,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "ממולאים בבשר",
+                            QuantityPerPerson = 2.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 2016,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "לשון ברוטב",
+                            QuantityPerPerson = 0.14999999999999999,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2017,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "נקניקיות",
+                            QuantityPerPerson = 2.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 2018,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "פסטה בולונז",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2019,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "מוסקה בשרית",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2020,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "פתיתים עם עוף",
+                            QuantityPerPerson = 0.14999999999999999,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2021,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "קישקע",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2022,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "שעועית עם בשר",
+                            QuantityPerPerson = 0.14999999999999999,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2023,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Meat",
+                            Name = "קוסקוס עם מרק עוף",
+                            QuantityPerPerson = 0.20000000000000001,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2031,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "מרק שמנת פטריות",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2032,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "מגש גבינות",
+                            QuantityPerPerson = 0.080000000000000002,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2033,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "טוסטים קטנים",
+                            QuantityPerPerson = 2.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 2034,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "מרק בטטה בשמנת",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2035,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "סלט קפרזה",
+                            QuantityPerPerson = 0.12,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2036,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "סלט קיסר",
+                            QuantityPerPerson = 0.12,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2037,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "סלט פסטה עם גבינה",
+                            QuantityPerPerson = 0.12,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2038,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "פיצה",
+                            QuantityPerPerson = 2.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 2039,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "רביולי גבינה",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2040,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "פסטה ברוטב רוזה",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2041,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "קיש פטריות",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2042,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "פשטידת ברוקולי",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2043,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "שקשוקה עם גבינה",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2044,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "ניוקי ברוטב שמנת",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2045,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "לחמניות גבינה",
+                            QuantityPerPerson = 2.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 2046,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "פירה בחמאה",
+                            QuantityPerPerson = 0.14999999999999999,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2047,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "אורז מוקרם",
+                            QuantityPerPerson = 0.12,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2048,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "ירקות מוקרמים",
+                            QuantityPerPerson = 0.14999999999999999,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2049,
+                            Category = "Dessert",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "עוגת גבינה פירורים",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2050,
+                            Category = "Dessert",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "גלידה",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2051,
+                            Category = "Dessert",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "מלבי",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2052,
+                            Category = "Dessert",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "עוגת שמרים",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2053,
+                            Category = "Dessert",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "פנקייקים",
+                            QuantityPerPerson = 2.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 2054,
+                            Category = "Drink",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "שוקו",
+                            QuantityPerPerson = 0.25,
+                            Unit = "Liter"
+                        },
+                        new
+                        {
+                            Id = 2055,
+                            Category = "Drink",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "מילקשייק",
+                            QuantityPerPerson = 0.25,
+                            Unit = "Liter"
+                        },
+                        new
+                        {
+                            Id = 2056,
+                            Category = "Drink",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "קפה הפוך",
+                            QuantityPerPerson = 0.20000000000000001,
+                            Unit = "Liter"
+                        },
+                        new
+                        {
+                            Id = 2061,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "פלאפל",
+                            QuantityPerPerson = 3.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 2062,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "חציל בטחינה",
+                            QuantityPerPerson = 0.080000000000000002,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2063,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "ממרח פלפלים קלויים",
+                            QuantityPerPerson = 0.050000000000000003,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2064,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "זיתים",
+                            QuantityPerPerson = 0.040000000000000001,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2065,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "מרק ירקות",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2066,
+                            Category = "Starter",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "מרק עדשים",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2067,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "סלט טבולה",
+                            QuantityPerPerson = 0.10000000000000001,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2068,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "סלט גזר",
+                            QuantityPerPerson = 0.080000000000000002,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2069,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "סלט סלק",
+                            QuantityPerPerson = 0.080000000000000002,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2070,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "סלט קינואה",
+                            QuantityPerPerson = 0.10000000000000001,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2071,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "סלט פסטה",
+                            QuantityPerPerson = 0.12,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2072,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "סלט כרוב סגול",
+                            QuantityPerPerson = 0.080000000000000002,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2073,
+                            Category = "Salad",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "סלט מלפפונים",
+                            QuantityPerPerson = 0.080000000000000002,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2074,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "שקשוקה",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2075,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "פשטידת תרד",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2076,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "מג'דרה",
+                            QuantityPerPerson = 0.20000000000000001,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2077,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "ממולאים באורז",
+                            QuantityPerPerson = 2.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 2078,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "קציצות ירק",
+                            QuantityPerPerson = 3.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 2079,
+                            Category = "Main",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "פסטה ברוטב עגבניות",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2080,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "חלה",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2081,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "פתיתים",
+                            QuantityPerPerson = 0.12,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2082,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "קוסקוס",
+                            QuantityPerPerson = 0.14999999999999999,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2083,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "בטטה בתנור",
+                            QuantityPerPerson = 0.14999999999999999,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2084,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "תירס",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 2085,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "פירה",
+                            QuantityPerPerson = 0.14999999999999999,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2086,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "צ'יפס",
+                            QuantityPerPerson = 0.14999999999999999,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2087,
+                            Category = "Side",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "קוגל בטטה",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2088,
+                            Category = "Dessert",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "עוגת תפוחים",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2089,
+                            Category = "Dessert",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "עוגת שיש",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2090,
+                            Category = "Dessert",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "בראוניז",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 2091,
+                            Category = "Dessert",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "אבטיח",
+                            QuantityPerPerson = 0.29999999999999999,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2092,
+                            Category = "Dessert",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "פירות יבשים",
+                            QuantityPerPerson = 0.050000000000000003,
+                            Unit = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2093,
+                            Category = "Dessert",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "עוגת דבש",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 2094,
+                            Category = "Drink",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "לימונדה",
+                            QuantityPerPerson = 0.25,
+                            Unit = "Liter"
+                        },
+                        new
+                        {
+                            Id = 2095,
+                            Category = "Drink",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "מיץ תפוחים",
+                            QuantityPerPerson = 0.25,
+                            Unit = "Liter"
+                        },
+                        new
+                        {
+                            Id = 2096,
+                            Category = "Drink",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "תה קר",
+                            QuantityPerPerson = 0.25,
+                            Unit = "Liter"
+                        },
+                        new
+                        {
+                            Id = 2097,
+                            Category = "Drink",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "סודה",
+                            QuantityPerPerson = 0.29999999999999999,
+                            Unit = "Liter"
+                        },
+                        new
+                        {
+                            Id = 2098,
+                            Category = "Drink",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "משקה מוגז",
+                            QuantityPerPerson = 0.33000000000000002,
+                            Unit = "Liter"
+                        },
+                        new
+                        {
+                            Id = 3001,
+                            Category = "CakeBar",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "מגש עוגיות",
+                            QuantityPerPerson = 3.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 3002,
+                            Category = "CakeBar",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "מאפינס",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 3003,
+                            Category = "CakeBar",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "רולדה",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 3004,
+                            Category = "CakeBar",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "עוגיות שוקולד צ'יפס",
+                            QuantityPerPerson = 2.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 3005,
+                            Category = "CakeBar",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "כדורי שוקולד",
+                            QuantityPerPerson = 2.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 3006,
+                            Category = "CakeBar",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "עוגת גזר",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 3007,
+                            Category = "CakeBar",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "טארט פירות",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 3008,
+                            Category = "CakeBar",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "פחזניות",
+                            QuantityPerPerson = 2.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 3009,
+                            Category = "CakeBar",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "עוגת גבינה אפויה",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 3010,
+                            Category = "CakeBar",
+                            CreatedByUserId = 1,
+                            KosherType = "Dairy",
+                            Name = "טירמיסו",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Portion"
+                        },
+                        new
+                        {
+                            Id = 3021,
+                            Category = "Disposables",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "צלחות חד פעמיות גדולות",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 3022,
+                            Category = "Disposables",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "צלחות חד פעמיות קטנות",
+                            QuantityPerPerson = 2.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 3023,
+                            Category = "Disposables",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "כוסות חד פעמיות",
+                            QuantityPerPerson = 3.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 3024,
+                            Category = "Disposables",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "סט סכין, מזלג וכף",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 3025,
+                            Category = "Disposables",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "מפיות",
+                            QuantityPerPerson = 3.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 3026,
+                            Category = "Disposables",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "קערות חד פעמיות",
+                            QuantityPerPerson = 1.0,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 3027,
+                            Category = "Disposables",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "מפות שולחן חד פעמיות",
+                            QuantityPerPerson = 0.10000000000000001,
+                            Unit = "Unit"
+                        },
+                        new
+                        {
+                            Id = 3028,
+                            Category = "Disposables",
+                            CreatedByUserId = 1,
+                            KosherType = "Parve",
+                            Name = "מגשי הגשה",
+                            QuantityPerPerson = 0.10000000000000001,
+                            Unit = "Unit"
                         });
                 });
 
