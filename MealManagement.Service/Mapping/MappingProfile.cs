@@ -41,6 +41,7 @@ namespace MealManagement.Service.Mapping
             CreateMap<Meal, MealDetailsDto>()
                 .ForMember(d => d.OwnerName, o => o.MapFrom(s => s.Owner.FullName))
                 .ForMember(d => d.MenuItems, o => o.MapFrom(s => s.MealDishes))
+                .ForMember(d => d.PendingEmails, o => o.MapFrom(s => s.Invitations.Select(i => i.Email)))
                 .ForMember(d => d.IsOwner, o => o.Ignore());
 
             CreateMap<CreateMealDto, Meal>(MemberList.Source)

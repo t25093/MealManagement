@@ -198,15 +198,37 @@ namespace MealManagement.Service.Services
             _logger.LogInformation("Meal {MealId} deleted by user {UserId}", mealId, currentUserId);
         }
 
-        public async Task<UserDto> AddParticipantAsync(int mealId, AddParticipantDto dto, int currentUserId, CancellationToken ct = default)
+        public async Task<AddParticipantResultDto> AddParticipantAsync(int mealId, AddParticipantDto dto, int currentUserId, CancellationToken ct = default)
         {
             var meal = await GetMealForUpdateOrThrowAsync(mealId, ct);
             EnsureOwner(meal, currentUserId);
 
             var email = dto.Email.Trim().ToLowerInvariant();
 
-            var found = await _users.GetByEmailAsync(email, ct)
-                ?? throw new NotFoundException($"לא נמצאה משתמשת רשומה עם האימייל {email}");
+            var found = await _users.GetByEmailAsync(email, ct);
+
+            // אימייל שלא רשום: שומרים הזמנה, והיא תהפוך להשתתפות כשהמשתמשת תירשם
+            if (found == null)
+            {
+                if (meal.Invitations.Any(i => i.Email == email))
+                    throw new ConflictException("האימייל כבר הוזמן לארוחה");
+
+                meal.Invitations.Add(new MealInvitation
+                {
+                    Email = email,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _unitOfWork.SaveChangesAsync(ct);
+
+                _logger.LogInformation("Invitation created for meal {MealId}", mealId);
+
+                return new AddParticipantResultDto
+                {
+                    Email = email,
+                    IsPending = true,
+                    Message = "האימייל עדיין לא רשום. נשמרה הזמנה, והמשתמשת תצורף לארוחה כשתירשם"
+                };
+            }
 
             if (found.Id == meal.OwnerId)
                 throw new BusinessRuleException("בעלת הארוחה כבר חלק מהארוחה");
@@ -223,7 +245,13 @@ namespace MealManagement.Service.Services
 
             _logger.LogInformation("User {ParticipantId} added to meal {MealId}", participant.Id, mealId);
 
-            return _mapper.Map<UserDto>(participant);
+            return new AddParticipantResultDto
+            {
+                Email = email,
+                IsPending = false,
+                User = _mapper.Map<UserDto>(participant),
+                Message = "המשתתפת נוספה לארוחה"
+            };
         }
 
         public async Task RemoveParticipantAsync(int mealId, int participantId, int currentUserId, CancellationToken ct = default)

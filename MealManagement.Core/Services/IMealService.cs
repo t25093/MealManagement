@@ -1,4 +1,4 @@
-using MealManagement.Core.DTOs;
+﻿using MealManagement.Core.DTOs;
 
 namespace MealManagement.Core.Services
 {
@@ -12,7 +12,7 @@ namespace MealManagement.Core.Services
         // בעלת הארוחה, או Admin
         Task DeleteAsync(int mealId, int currentUserId, bool isAdmin, CancellationToken ct = default);
 
-        Task<UserDto> AddParticipantAsync(int mealId, AddParticipantDto dto, int currentUserId, CancellationToken ct = default);
+        Task<AddParticipantResultDto> AddParticipantAsync(int mealId, AddParticipantDto dto, int currentUserId, CancellationToken ct = default);
         Task RemoveParticipantAsync(int mealId, int participantId, int currentUserId, CancellationToken ct = default);
     }
 }

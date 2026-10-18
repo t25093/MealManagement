@@ -48,6 +48,7 @@ builder.Services.AddScoped<IMealDishRepository, MealDishRepository>();
 builder.Services.AddScoped<IUserDishAssignmentRepository, UserDishAssignmentRepository>();
 builder.Services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
 builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
+builder.Services.AddScoped<IMealInvitationRepository, MealInvitationRepository>();
 
 // ===== Service =====
 builder.Services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();

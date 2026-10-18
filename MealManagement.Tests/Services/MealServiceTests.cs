@@ -144,5 +144,48 @@ namespace MealManagement.Tests.Services
             // Act + Assert: משתמשת 99 מנסה לצפות
             await Assert.ThrowsAsync<ForbiddenException>(() => _service.GetByIdAsync(1, 99));
         }
+
+        // ===== הוספת משתתפת שלא רשומה =====
+
+        [Fact]
+        public async Task AddParticipantAsync_EmailNotRegistered_CreatesInvitation()
+        {
+            // Arrange: האימייל לא קיים במערכת
+            var meal = new Meal { Id = 1, OwnerId = OwnerId };
+            _meals.Setup(m => m.GetForUpdateAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(meal);
+            _users.Setup(u => u.GetByEmailAsync("new@test.com", It.IsAny<CancellationToken>()))
+                  .ReturnsAsync((User?)null);
+
+            // Act (האימייל עובר נרמול לאותיות קטנות)
+            var result = await _service.AddParticipantAsync(1, new AddParticipantDto { Email = " New@Test.com" }, OwnerId);
+
+            // Assert: נשמרה הזמנה ולא נוספה משתתפת
+            Assert.True(result.IsPending);
+            var invitation = Assert.Single(meal.Invitations);
+            Assert.Equal("new@test.com", invitation.Email);
+            Assert.Empty(meal.Participants);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task AddParticipantAsync_EmailAlreadyInvited_ThrowsConflict()
+        {
+            // Arrange
+            var meal = new Meal
+            {
+                Id = 1,
+                OwnerId = OwnerId,
+                Invitations = { new MealInvitation { MealId = 1, Email = "new@test.com" } }
+            };
+            _meals.Setup(m => m.GetForUpdateAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(meal);
+            _users.Setup(u => u.GetByEmailAsync("new@test.com", It.IsAny<CancellationToken>()))
+                  .ReturnsAsync((User?)null);
+
+            // Act + Assert
+            await Assert.ThrowsAsync<ConflictException>(() =>
+                _service.AddParticipantAsync(1, new AddParticipantDto { Email = "new@test.com" }, OwnerId));
+
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
     }
 }

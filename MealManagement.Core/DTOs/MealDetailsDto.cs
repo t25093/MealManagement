@@ -19,6 +19,7 @@ namespace MealManagement.Core.DTOs
         public string OwnerName { get; set; } = string.Empty;
         public bool IsOwner { get; set; }
         public List<UserDto> Participants { get; set; } = new();
+        public List<string> PendingEmails { get; set; } = new(); // הוזמנו ועדיין לא נרשמו
         public List<MealDishDto> MenuItems { get; set; } = new();
     }
 }

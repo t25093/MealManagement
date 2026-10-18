@@ -15,6 +15,7 @@ namespace MealManagement.Data
         public DbSet<UserDishAssignment> UserDishAssignments => Set<UserDishAssignment>();
         public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
         public DbSet<Recipe> Recipes => Set<Recipe>();
+        public DbSet<MealInvitation> MealInvitations => Set<MealInvitation>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

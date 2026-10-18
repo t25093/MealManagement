@@ -21,5 +21,6 @@ namespace MealManagement.Core.Entities
         public List<ChatMessage> Messages { get; set; } = new();
         public List<User> Participants { get; set; } = new();
         public List<Recipe> Recipes { get; set; } = new();
+        public List<MealInvitation> Invitations { get; set; } = new(); // אימיילים שהוזמנו ועדיין לא נרשמו
     }
 }

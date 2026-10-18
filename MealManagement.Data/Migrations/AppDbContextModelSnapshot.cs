@@ -388,6 +388,35 @@ namespace MealManagement.Data.Migrations
                     b.ToTable("MealDishes");
                 });
 
+            modelBuilder.Entity("MealManagement.Core.Entities.MealInvitation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("MealId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email");
+
+                    b.HasIndex("MealId", "Email")
+                        .IsUnique();
+
+                    b.ToTable("MealInvitations");
+                });
+
             modelBuilder.Entity("MealManagement.Core.Entities.Recipe", b =>
                 {
                     b.Property<int>("Id")
@@ -598,6 +627,17 @@ namespace MealManagement.Data.Migrations
                     b.Navigation("Meal");
                 });
 
+            modelBuilder.Entity("MealManagement.Core.Entities.MealInvitation", b =>
+                {
+                    b.HasOne("MealManagement.Core.Entities.Meal", "Meal")
+                        .WithMany("Invitations")
+                        .HasForeignKey("MealId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Meal");
+                });
+
             modelBuilder.Entity("MealManagement.Core.Entities.Recipe", b =>
                 {
                     b.HasOne("MealManagement.Core.Entities.User", "Author")
@@ -665,6 +705,8 @@ namespace MealManagement.Data.Migrations
 
             modelBuilder.Entity("MealManagement.Core.Entities.Meal", b =>
                 {
+                    b.Navigation("Invitations");
+
                     b.Navigation("MealDishes");
 
                     b.Navigation("Messages");

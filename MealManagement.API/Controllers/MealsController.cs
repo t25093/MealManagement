@@ -71,14 +71,14 @@ namespace MealManagement.API.Controllers
         // ===== משתתפות =====
 
         [HttpPost("{mealId:int}/participants")]
-        [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(AddParticipantResultDto), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-        public async Task<ActionResult<UserDto>> AddParticipant(int mealId, AddParticipantDto dto, CancellationToken ct)
+        public async Task<ActionResult<AddParticipantResultDto>> AddParticipant(int mealId, AddParticipantDto dto, CancellationToken ct)
         {
-            var participant = await _meals.AddParticipantAsync(mealId, dto, User.GetUserId(), ct);
-            return CreatedAtAction(nameof(GetById), new { mealId }, participant);
+            var result = await _meals.AddParticipantAsync(mealId, dto, User.GetUserId(), ct);
+            return CreatedAtAction(nameof(GetById), new { mealId }, result);
         }
 
         [HttpDelete("{mealId:int}/participants/{userId:int}")]

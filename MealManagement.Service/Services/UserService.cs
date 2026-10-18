@@ -14,6 +14,7 @@ namespace MealManagement.Service.Services
         private const int MaxPageSize = 50;
 
         private readonly IUserRepository _users;
+        private readonly IMealInvitationRepository _invitations;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPasswordHasher _passwordHasher;
         private readonly ITokenService _tokenService;
@@ -22,6 +23,7 @@ namespace MealManagement.Service.Services
 
         public UserService(
             IUserRepository users,
+            IMealInvitationRepository invitations,
             IUnitOfWork unitOfWork,
             IPasswordHasher passwordHasher,
             ITokenService tokenService,
@@ -29,6 +31,7 @@ namespace MealManagement.Service.Services
             ILogger<UserService> logger)
         {
             _users = users;
+            _invitations = invitations;
             _unitOfWork = unitOfWork;
             _passwordHasher = passwordHasher;
             _tokenService = tokenService;
@@ -53,9 +56,17 @@ namespace MealManagement.Service.Services
             };
 
             await _users.AddAsync(user, ct);
+
+            // הזמנות שחיכו לאימייל הזה הופכות להשתתפות בארוחות
+            var invitations = await _invitations.GetByEmailAsync(email, ct);
+            foreach (var invitation in invitations)
+                user.ParticipatingMeals.Add(invitation.Meal);
+            _invitations.RemoveRange(invitations);
+
+            // שמירה אחת: המשתמשת, ההשתתפויות ומחיקת ההזמנות יחד
             await _unitOfWork.SaveChangesAsync(ct);
 
-            _logger.LogInformation("User {UserId} registered", user.Id);
+            _logger.LogInformation("User {UserId} registered, joined {Count} invited meals", user.Id, invitations.Count);
 
             return _tokenService.CreateToken(_mapper.Map<UserDto>(user));
         }

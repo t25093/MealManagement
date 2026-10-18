@@ -13,6 +13,7 @@ namespace MealManagement.Tests.Services
     public class UserServiceTests
     {
         private readonly Mock<IUserRepository> _users = new();
+        private readonly Mock<IMealInvitationRepository> _invitations = new();
         private readonly Mock<IUnitOfWork> _unitOfWork = new();
         private readonly Mock<IPasswordHasher> _passwordHasher = new();
         private readonly Mock<ITokenService> _tokenService = new();
@@ -23,6 +24,7 @@ namespace MealManagement.Tests.Services
         {
             _service = new UserService(
                 _users.Object,
+                _invitations.Object,
                 _unitOfWork.Object,
                 _passwordHasher.Object,
                 _tokenService.Object,
@@ -61,6 +63,37 @@ namespace MealManagement.Tests.Services
             await Assert.ThrowsAsync<UnauthorizedException>(() => _service.LoginAsync(dto));
 
             _tokenService.Verify(t => t.CreateToken(It.IsAny<UserDto>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task RegisterAsync_EmailWasInvited_JoinsMealsAndRemovesInvitations()
+        {
+            // Arrange: האימייל הוזמן לארוחה 7 לפני שנרשם
+            var meal = new Meal { Id = 7 };
+            var invitations = new List<MealInvitation>
+            {
+                new MealInvitation { MealId = 7, Email = "dina@test.com", Meal = meal }
+            };
+            _users.Setup(u => u.EmailExistsAsync("dina@test.com", It.IsAny<CancellationToken>()))
+                  .ReturnsAsync(false);
+            _invitations.Setup(i => i.GetByEmailAsync("dina@test.com", It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(invitations);
+            _passwordHasher.Setup(h => h.Hash("123456")).Returns("hash");
+
+            User? added = null;
+            _users.Setup(u => u.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
+                  .Callback<User, CancellationToken>((user, _) => added = user);
+
+            var dto = new RegisterDto { FullName = "דינה", Email = "Dina@Test.com", Password = "123456" };
+
+            // Act
+            await _service.RegisterAsync(dto);
+
+            // Assert: המשתמשת צורפה לארוחה, וההזמנה נמחקה, בשמירה אחת
+            Assert.NotNull(added);
+            Assert.Same(meal, Assert.Single(added!.ParticipatingMeals));
+            _invitations.Verify(i => i.RemoveRange(invitations), Times.Once);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }
