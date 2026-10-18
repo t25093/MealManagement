@@ -20,6 +20,7 @@ namespace MealManagement.Core.Entities
         public List<MealDish> MealDishes { get; set; } = new(); // רשימת המאכלים המקושרים לארוחה זו
         public List<ChatMessage> Messages { get; set; } = new();
         public List<User> Participants { get; set; } = new();
+        public List<User> Editors { get; set; } = new(); // משתתפות שקיבלו הרשאה לערוך את הארוחה
         public List<Recipe> Recipes { get; set; } = new();
         public List<MealInvitation> Invitations { get; set; } = new(); // אימיילים שהוזמנו ועדיין לא נרשמו
     }

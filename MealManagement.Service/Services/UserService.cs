@@ -6,18 +6,22 @@ using MealManagement.Core.Exceptions;
 using MealManagement.Core.Repositories;
 using MealManagement.Core.Services;
 using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace MealManagement.Service.Services
 {
     public class UserService : IUserService
     {
         private const int MaxPageSize = 50;
+        private static readonly TimeSpan PasswordResetLifetime = TimeSpan.FromHours(1);
 
         private readonly IUserRepository _users;
         private readonly IMealInvitationRepository _invitations;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPasswordHasher _passwordHasher;
         private readonly ITokenService _tokenService;
+        private readonly IEmailNotifications _emails;
         private readonly IMapper _mapper;
         private readonly ILogger<UserService> _logger;
 
@@ -27,6 +31,7 @@ namespace MealManagement.Service.Services
             IUnitOfWork unitOfWork,
             IPasswordHasher passwordHasher,
             ITokenService tokenService,
+            IEmailNotifications emails,
             IMapper mapper,
             ILogger<UserService> logger)
         {
@@ -35,6 +40,7 @@ namespace MealManagement.Service.Services
             _unitOfWork = unitOfWork;
             _passwordHasher = passwordHasher;
             _tokenService = tokenService;
+            _emails = emails;
             _mapper = mapper;
             _logger = logger;
         }
@@ -95,6 +101,49 @@ namespace MealManagement.Service.Services
             return _mapper.Map<UserDto>(user);
         }
 
+        public async Task ForgotPasswordAsync(ForgotPasswordDto dto, CancellationToken ct = default)
+        {
+            var found = await _users.GetByEmailAsync(NormalizeEmail(dto.Email), ct);
+
+            // אימייל שלא רשום: מסיימים בשקט, כדי לא לגלות מי רשומה במערכת
+            if (found == null)
+            {
+                _logger.LogInformation("Password reset requested for an unknown email");
+                return;
+            }
+
+            // טעינה מחדש עם מעקב, לשמירת הקוד
+            var user = await _users.GetByIdAsync(found.Id, ct)
+                ?? throw new NotFoundException("המשתמשת לא נמצאה");
+
+            // הקוד עצמו נשלח במייל, ובבסיס הנתונים נשמר רק ה-hash שלו
+            var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
+                .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+            user.PasswordResetTokenHash = HashToken(token);
+            user.PasswordResetExpiresAt = DateTime.UtcNow.Add(PasswordResetLifetime);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            await _emails.SendPasswordResetAsync(user, token, ct);
+
+            _logger.LogInformation("Password reset email sent to user {UserId}", user.Id);
+        }
+
+        public async Task ResetPasswordAsync(ResetPasswordDto dto, CancellationToken ct = default)
+        {
+            var user = await _users.GetByPasswordResetTokenHashAsync(HashToken(dto.Token), ct);
+
+            if (user == null || user.PasswordResetExpiresAt == null || user.PasswordResetExpiresAt < DateTime.UtcNow)
+                throw new BusinessRuleException("הקישור לאיפוס הסיסמה לא תקין או שפג תוקפו. אפשר לבקש קישור חדש");
+
+            // הקוד משמש פעם אחת בלבד
+            user.PasswordHash = _passwordHasher.Hash(dto.NewPassword);
+            user.PasswordResetTokenHash = null;
+            user.PasswordResetExpiresAt = null;
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Password reset for user {UserId}", user.Id);
+        }
+
         public async Task<PagedResult<UserDto>> GetAllAsync(int page, int pageSize, CancellationToken ct = default)
         {
             page = Math.Max(page, 1);
@@ -140,6 +189,11 @@ namespace MealManagement.Service.Services
         private static string NormalizeEmail(string email)
         {
             return email.Trim().ToLowerInvariant();
+        }
+
+        private static string HashToken(string token)
+        {
+            return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
         }
     }
 }

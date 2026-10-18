@@ -30,6 +30,11 @@ namespace MealManagement.Data.Configurations
                 .HasConversion<string>()
                 .HasMaxLength(20);
 
+            builder.Property(u => u.PasswordResetTokenHash)
+                .HasMaxLength(64);
+
+            builder.HasIndex(u => u.PasswordResetTokenHash);
+
             builder.HasData(
                     new User
                     {

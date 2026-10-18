@@ -20,6 +20,7 @@ namespace MealManagement.Data.Repositories
                 .AsNoTracking()
                 .Include(m => m.Owner)
                 .Include(m => m.Participants)
+                .Include(m => m.Editors)
                 .Include(m => m.Invitations)
                 .Include(m => m.MealDishes)
                     .ThenInclude(md => md.Dish)
@@ -35,6 +36,7 @@ namespace MealManagement.Data.Repositories
             return await _context.Meals
                 .Include(m => m.MealDishes)
                 .Include(m => m.Participants)
+                .Include(m => m.Editors)
                 .Include(m => m.Invitations)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(m => m.Id == mealId, ct);

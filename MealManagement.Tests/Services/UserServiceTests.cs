@@ -18,6 +18,7 @@ namespace MealManagement.Tests.Services
         private readonly Mock<IUnitOfWork> _unitOfWork = new();
         private readonly Mock<IPasswordHasher> _passwordHasher = new();
         private readonly Mock<ITokenService> _tokenService = new();
+        private readonly Mock<IEmailNotifications> _emails = new();
 
         private readonly UserService _service;
 
@@ -29,6 +30,7 @@ namespace MealManagement.Tests.Services
                 _unitOfWork.Object,
                 _passwordHasher.Object,
                 _tokenService.Object,
+                _emails.Object,
                 TestMapper.Create(),
                 NullLogger<UserService>.Instance);
         }
@@ -144,6 +146,97 @@ namespace MealManagement.Tests.Services
             Assert.Equal(2, mealDish.AssignedQuantity);
             _users.Verify(u => u.RemoveWithRelatedDataAsync(user, 1, It.IsAny<CancellationToken>()), Times.Once);
             _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        // ===== איפוס סיסמה =====
+
+        private static string Sha256Hex(string value)
+        {
+            return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(value)));
+        }
+
+        [Fact]
+        public async Task ForgotPasswordAsync_UnknownEmail_DoesNothingAndDoesNotReveal()
+        {
+            // Arrange
+            _users.Setup(u => u.GetByEmailAsync("nobody@test.com", It.IsAny<CancellationToken>()))
+                  .ReturnsAsync((User?)null);
+
+            // Act: לא נזרקת שגיאה
+            await _service.ForgotPasswordAsync(new ForgotPasswordDto { Email = "nobody@test.com" });
+
+            // Assert
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+            _emails.Verify(e => e.SendPasswordResetAsync(It.IsAny<User>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ForgotPasswordAsync_KnownEmail_SavesTokenHashAndSendsEmail()
+        {
+            // Arrange
+            var user = new User { Id = 5, FullName = "דינה", Email = "dina@test.com" };
+            _users.Setup(u => u.GetByEmailAsync("dina@test.com", It.IsAny<CancellationToken>())).ReturnsAsync(user);
+            _users.Setup(u => u.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+
+            string? sentToken = null;
+            _emails.Setup(e => e.SendPasswordResetAsync(user, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                   .Callback<User, string, CancellationToken>((_, token, _) => sentToken = token);
+
+            // Act
+            await _service.ForgotPasswordAsync(new ForgotPasswordDto { Email = "Dina@Test.com" });
+
+            // Assert: במייל נשלח הקוד, ונשמר רק ה-hash שלו, לשעה אחת
+            Assert.NotNull(sentToken);
+            Assert.Equal(Sha256Hex(sentToken!), user.PasswordResetTokenHash);
+            Assert.InRange(user.PasswordResetExpiresAt!.Value, DateTime.UtcNow.AddMinutes(59), DateTime.UtcNow.AddMinutes(61));
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ResetPasswordAsync_ValidToken_ChangesPasswordAndClearsToken()
+        {
+            // Arrange
+            var user = new User
+            {
+                Id = 5,
+                PasswordHash = "old",
+                PasswordResetTokenHash = Sha256Hex("abc"),
+                PasswordResetExpiresAt = DateTime.UtcNow.AddMinutes(30)
+            };
+            _users.Setup(u => u.GetByPasswordResetTokenHashAsync(Sha256Hex("abc"), It.IsAny<CancellationToken>()))
+                  .ReturnsAsync(user);
+            _passwordHasher.Setup(h => h.Hash("newpass")).Returns("new-hash");
+
+            // Act
+            await _service.ResetPasswordAsync(new ResetPasswordDto { Token = "abc", NewPassword = "newpass" });
+
+            // Assert: הסיסמה הוחלפה, והקוד לא יעבוד שוב
+            Assert.Equal("new-hash", user.PasswordHash);
+            Assert.Null(user.PasswordResetTokenHash);
+            Assert.Null(user.PasswordResetExpiresAt);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ResetPasswordAsync_ExpiredToken_ThrowsBusinessRuleAndDoesNotSave()
+        {
+            // Arrange
+            var user = new User
+            {
+                Id = 5,
+                PasswordHash = "old",
+                PasswordResetTokenHash = Sha256Hex("abc"),
+                PasswordResetExpiresAt = DateTime.UtcNow.AddMinutes(-1)
+            };
+            _users.Setup(u => u.GetByPasswordResetTokenHashAsync(Sha256Hex("abc"), It.IsAny<CancellationToken>()))
+                  .ReturnsAsync(user);
+
+            // Act + Assert
+            await Assert.ThrowsAsync<BusinessRuleException>(() =>
+                _service.ResetPasswordAsync(new ResetPasswordDto { Token = "abc", NewPassword = "newpass" }));
+
+            Assert.Equal("old", user.PasswordHash);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
     }
 }

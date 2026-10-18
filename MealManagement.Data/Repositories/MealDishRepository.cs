@@ -18,6 +18,7 @@ namespace MealManagement.Data.Repositories
             // בלי AsNoTracking: ערך ה-xmin המקורי חייב להישמר במעקב
             return await _context.MealDishes
                 .Include(md => md.Meal)
+                    .ThenInclude(m => m.Editors)
                 .Include(md => md.Dish)
                 .FirstOrDefaultAsync(md => md.Id == mealDishId, ct);
         }

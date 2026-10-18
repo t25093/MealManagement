@@ -10,5 +10,7 @@ namespace MealManagement.Core.DTOs
 
         [Range(1, 1000, ErrorMessage = "מספר האורחים חייב להיות בין 1 ל-1000")]
         public int? GuestsCount { get; set; }
+
+        public DateTime? EventDate { get; set; }
     }
 }

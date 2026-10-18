@@ -42,7 +42,9 @@ namespace MealManagement.Service.Mapping
                 .ForMember(d => d.OwnerName, o => o.MapFrom(s => s.Owner.FullName))
                 .ForMember(d => d.MenuItems, o => o.MapFrom(s => s.MealDishes))
                 .ForMember(d => d.PendingEmails, o => o.MapFrom(s => s.Invitations.Select(i => i.Email)))
-                .ForMember(d => d.IsOwner, o => o.Ignore());
+                .ForMember(d => d.EditorIds, o => o.MapFrom(s => s.Editors.Select(e => e.Id)))
+                .ForMember(d => d.IsOwner, o => o.Ignore())
+                .ForMember(d => d.CanEdit, o => o.Ignore());
 
             CreateMap<CreateMealDto, Meal>(MemberList.Source)
               .ForMember(d => d.MealDishes, o => o.Ignore())

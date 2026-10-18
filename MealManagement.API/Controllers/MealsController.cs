@@ -90,5 +90,27 @@ namespace MealManagement.API.Controllers
             await _meals.RemoveParticipantAsync(mealId, userId, User.GetUserId(), ct);
             return NoContent();
         }
+
+        // ===== הרשאת עריכה (בעלת הארוחה בלבד) =====
+
+        [HttpPut("{mealId:int}/editors/{userId:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> AddEditor(int mealId, int userId, CancellationToken ct)
+        {
+            await _meals.SetEditPermissionAsync(mealId, userId, canEdit: true, User.GetUserId(), ct);
+            return NoContent();
+        }
+
+        [HttpDelete("{mealId:int}/editors/{userId:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RemoveEditor(int mealId, int userId, CancellationToken ct)
+        {
+            await _meals.SetEditPermissionAsync(mealId, userId, canEdit: false, User.GetUserId(), ct);
+            return NoContent();
+        }
     }
 }

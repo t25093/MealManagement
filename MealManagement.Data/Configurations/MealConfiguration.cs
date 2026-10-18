@@ -35,6 +35,11 @@ namespace MealManagement.Data.Configurations
                 j.HasData(new { ParticipantsId = 2, ParticipatingMealsId = 1 });
             });
 
+            // משתתפות עם הרשאת עריכה: טבלת קשר נפרדת, כדי לא לשנות את MealParticipants
+            builder.HasMany(m => m.Editors)
+                .WithMany(u => u.EditableMeals)
+                .UsingEntity(j => j.ToTable("MealEditors"));
+
             builder.HasData(new Meal
             {
                 Id = 1,

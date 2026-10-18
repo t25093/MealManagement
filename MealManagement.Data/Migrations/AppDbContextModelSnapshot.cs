@@ -1784,6 +1784,13 @@ namespace MealManagement.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<DateTime?>("PasswordResetExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PasswordResetTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -1793,6 +1800,8 @@ namespace MealManagement.Data.Migrations
 
                     b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("PasswordResetTokenHash");
 
                     b.ToTable("Users");
 
@@ -1868,6 +1877,21 @@ namespace MealManagement.Data.Migrations
                             ParticipantsId = 2,
                             ParticipatingMealsId = 1
                         });
+                });
+
+            modelBuilder.Entity("MealUser1", b =>
+                {
+                    b.Property<int>("EditableMealsId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EditorsId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("EditableMealsId", "EditorsId");
+
+                    b.HasIndex("EditorsId");
+
+                    b.ToTable("MealEditors", (string)null);
                 });
 
             modelBuilder.Entity("MealManagement.Core.Entities.ChatMessage", b =>
@@ -1994,6 +2018,21 @@ namespace MealManagement.Data.Migrations
                     b.HasOne("MealManagement.Core.Entities.Meal", null)
                         .WithMany()
                         .HasForeignKey("ParticipatingMealsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MealUser1", b =>
+                {
+                    b.HasOne("MealManagement.Core.Entities.Meal", null)
+                        .WithMany()
+                        .HasForeignKey("EditableMealsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MealManagement.Core.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("EditorsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

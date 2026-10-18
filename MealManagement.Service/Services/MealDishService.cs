@@ -69,8 +69,8 @@ namespace MealManagement.Service.Services
             var meal = await _meals.GetForUpdateAsync(mealId, ct)
                 ?? throw new NotFoundException("הארוחה לא נמצאה");
 
-            if (meal.OwnerId != currentUserId)
-                throw new ForbiddenException("רק בעלת הארוחה יכולה להוסיף מנות");
+            if (!MealPermissions.CanEdit(meal, currentUserId))
+                throw new ForbiddenException("רק בעלת הארוחה או משתתפת עם הרשאת עריכה יכולות להוסיף מנות");
 
             MealDish mealDish;
 
@@ -124,8 +124,8 @@ namespace MealManagement.Service.Services
             if (mealDish == null || mealDish.MealId != mealId)
                 throw new NotFoundException("המנה לא נמצאה בארוחה הזו");
 
-            if (mealDish.Meal.OwnerId != currentUserId)
-                throw new ForbiddenException("רק בעלת הארוחה יכולה להסיר מנות");
+            if (!MealPermissions.CanEdit(mealDish.Meal, currentUserId))
+                throw new ForbiddenException("רק בעלת הארוחה או משתתפת עם הרשאת עריכה יכולות להסיר מנות");
 
             if (await _mealDishes.HasAssignmentsAsync(mealDishId, ct))
                 throw new ConflictException("לא ניתן להסיר מנה שכבר נלקחה. יש לבטל קודם את הלקיחות");

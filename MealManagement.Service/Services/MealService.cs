@@ -15,6 +15,7 @@ namespace MealManagement.Service.Services
         private readonly IUserRepository _users;
         private readonly IUserDishAssignmentRepository _assignments;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IEmailNotifications _emails;
         private readonly IMapper _mapper;
         private readonly ILogger<MealService> _logger;
 
@@ -24,6 +25,7 @@ namespace MealManagement.Service.Services
             IUserRepository users,
             IUserDishAssignmentRepository assignments,
             IUnitOfWork unitOfWork,
+            IEmailNotifications emails,
             IMapper mapper,
             ILogger<MealService> logger)
         {
@@ -32,6 +34,7 @@ namespace MealManagement.Service.Services
             _users = users;
             _assignments = assignments;
             _unitOfWork = unitOfWork;
+            _emails = emails;
             _mapper = mapper;
             _logger = logger;
         }
@@ -141,10 +144,13 @@ namespace MealManagement.Service.Services
         public async Task UpdateAsync(int mealId, UpdateMealDto dto, int currentUserId, CancellationToken ct = default)
         {
             var meal = await GetMealForUpdateOrThrowAsync(mealId, ct);
-            EnsureOwner(meal, currentUserId);
+            EnsureCanEdit(meal, currentUserId);
 
             if (!string.IsNullOrWhiteSpace(dto.Name))
                 meal.Name = dto.Name.Trim();
+
+            if (dto.EventDate.HasValue)
+                meal.EventDate = ToUtc(dto.EventDate.Value);
 
             if (dto.GuestsCount.HasValue && dto.GuestsCount.Value != meal.GuestsCount)
             {
@@ -201,7 +207,7 @@ namespace MealManagement.Service.Services
         public async Task<AddParticipantResultDto> AddParticipantAsync(int mealId, AddParticipantDto dto, int currentUserId, CancellationToken ct = default)
         {
             var meal = await GetMealForUpdateOrThrowAsync(mealId, ct);
-            EnsureOwner(meal, currentUserId);
+            EnsureCanEdit(meal, currentUserId);
 
             var email = dto.Email.Trim().ToLowerInvariant();
 
@@ -221,6 +227,8 @@ namespace MealManagement.Service.Services
                 await _unitOfWork.SaveChangesAsync(ct);
 
                 _logger.LogInformation("Invitation created for meal {MealId}", mealId);
+
+                await _emails.SendMealInvitationAsync(email, meal, await GetInviterNameAsync(currentUserId, ct), isRegistered: false, ct);
 
                 return new AddParticipantResultDto
                 {
@@ -244,6 +252,8 @@ namespace MealManagement.Service.Services
             await _unitOfWork.SaveChangesAsync(ct);
 
             _logger.LogInformation("User {ParticipantId} added to meal {MealId}", participant.Id, mealId);
+
+            await _emails.SendMealInvitationAsync(email, meal, await GetInviterNameAsync(currentUserId, ct), isRegistered: true, ct);
 
             return new AddParticipantResultDto
             {
@@ -270,9 +280,35 @@ namespace MealManagement.Service.Services
                 throw new ConflictException("למשתתפת יש מנות שלקחה בארוחה. יש לבטל אותן לפני ההסרה");
 
             meal.Participants.Remove(participant);
+            meal.Editors.Remove(participant); // משתתפת שהוסרה מאבדת גם את הרשאת העריכה
             await _unitOfWork.SaveChangesAsync(ct);
 
             _logger.LogInformation("User {ParticipantId} removed from meal {MealId}", participantId, mealId);
+        }
+
+        // ===== צעד 5: הרשאת עריכה =====
+
+        public async Task SetEditPermissionAsync(int mealId, int participantId, bool canEdit, int currentUserId, CancellationToken ct = default)
+        {
+            var meal = await GetMealForUpdateOrThrowAsync(mealId, ct);
+            EnsureOwner(meal, currentUserId);
+
+            var participant = meal.Participants.FirstOrDefault(p => p.Id == participantId)
+                ?? throw new NotFoundException("המשתמשת אינה משתתפת בארוחה");
+
+            var isEditor = meal.Editors.Contains(participant);
+            if (canEdit == isEditor)
+                return;
+
+            if (canEdit)
+                meal.Editors.Add(participant);
+            else
+                meal.Editors.Remove(participant);
+
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            _logger.LogInformation(
+                "Edit permission for user {ParticipantId} in meal {MealId} set to {CanEdit}", participantId, mealId, canEdit);
         }
 
         // ===== פונקציות עזר =====
@@ -290,7 +326,14 @@ namespace MealManagement.Service.Services
 
             var dto = _mapper.Map<MealDetailsDto>(meal);
             dto.IsOwner = isOwner;
+            dto.CanEdit = MealPermissions.CanEdit(meal, currentUserId);
             return dto;
+        }
+
+        private async Task<string> GetInviterNameAsync(int currentUserId, CancellationToken ct)
+        {
+            var inviter = await _users.GetByIdAsync(currentUserId, ct);
+            return inviter?.FullName ?? "בעלת הארוחה";
         }
 
         private async Task<Meal> GetMealForUpdateOrThrowAsync(int mealId, CancellationToken ct)
@@ -303,6 +346,12 @@ namespace MealManagement.Service.Services
         {
             if (meal.OwnerId != currentUserId)
                 throw new ForbiddenException("רק בעלת הארוחה יכולה לבצע פעולה זו");
+        }
+
+        private static void EnsureCanEdit(Meal meal, int currentUserId)
+        {
+            if (!MealPermissions.CanEdit(meal, currentUserId))
+                throw new ForbiddenException("רק בעלת הארוחה או משתתפת עם הרשאת עריכה יכולות לבצע פעולה זו");
         }
 
         private static double CalculateCoverage(Meal meal)

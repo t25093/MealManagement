@@ -6,6 +6,7 @@ using MealManagement.Core.Services;
 using MealManagement.Core.Settings;
 using MealManagement.Data;
 using MealManagement.Data.Repositories;
+using MealManagement.Service.Email;
 using MealManagement.Service.Mapping;
 using MealManagement.Service.Security;
 using MealManagement.Service.Services;
@@ -29,6 +30,15 @@ builder.Services.AddOptions<JwtSettings>()
     .Bind(builder.Configuration.GetSection(JwtSettings.SectionName))
     .ValidateDataAnnotations()
     .ValidateOnStart();
+
+// מיילים: בלי Email:ClientUrl הקישורים מובילים לכתובת הראשונה ב-Cors:ClientUrl
+builder.Services.AddOptions<EmailSettings>()
+    .Bind(builder.Configuration.GetSection(EmailSettings.SectionName))
+    .PostConfigure(o =>
+    {
+        if (string.IsNullOrWhiteSpace(o.ClientUrl))
+            o.ClientUrl = (builder.Configuration["Cors:ClientUrl"] ?? "").Split(',')[0].Trim();
+    });
 
 builder.Services.AddOptions<PaginationSettings>()
     .Bind(builder.Configuration.GetSection(PaginationSettings.SectionName))
@@ -57,6 +67,13 @@ builder.Services.AddScoped<IMealInvitationRepository, MealInvitationRepository>(
 // ===== Service =====
 builder.Services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IEmailNotifications, EmailNotifications>();
+
+// עם מפתח של Brevo המיילים נשלחים באמת, ובלי מפתח הם רק נרשמים ביומן
+if (string.IsNullOrWhiteSpace(builder.Configuration["Email:ApiKey"]))
+    builder.Services.AddSingleton<IEmailSender, LogEmailSender>();
+else
+    builder.Services.AddHttpClient<IEmailSender, BrevoEmailSender>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IDishService, DishService>();
 builder.Services.AddScoped<IMealService, MealService>();
@@ -165,6 +182,19 @@ app.Services.GetRequiredService<IMapper>().ConfigurationProvider.AssertConfigura
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
+
+    // סיסמת המנהלת: אם הוגדר Admin__Password (למשל ב-Render), היא מחליפה את סיסמת ה-Seed
+    var adminPassword = builder.Configuration["Admin:Password"];
+    if (!string.IsNullOrWhiteSpace(adminPassword))
+    {
+        var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+        var admin = await db.Users.FirstOrDefaultAsync(u => u.Email == "admin@meals.local");
+        if (admin != null && !hasher.Verify(adminPassword, admin.PasswordHash))
+        {
+            admin.PasswordHash = hasher.Hash(adminPassword);
+            await db.SaveChangesAsync();
+        }
+    }
 }
 
 // ===== Pipeline: הסדר קובע =====

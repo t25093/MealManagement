@@ -33,6 +33,7 @@ namespace MealManagement.Tests.Integration
                 new UnitOfWork(context),
                 Mock.Of<IPasswordHasher>(),
                 Mock.Of<ITokenService>(),
+                Mock.Of<IEmailNotifications>(),
                 TestMapper.Create(),
                 NullLogger<UserService>.Instance);
         }

@@ -8,6 +8,10 @@ namespace MealManagement.Core.Services
         Task<AuthResponseDto> LoginAsync(LoginDto dto, CancellationToken ct = default);
         Task<UserDto> GetByIdAsync(int userId, CancellationToken ct = default);
 
+        // שולח מייל עם קישור לאיפוס סיסמה. לא מגלה אם האימייל רשום במערכת
+        Task ForgotPasswordAsync(ForgotPasswordDto dto, CancellationToken ct = default);
+        Task ResetPasswordAsync(ResetPasswordDto dto, CancellationToken ct = default);
+
         // Admin בלבד (נבדק ב-Controller)
         Task<PagedResult<UserDto>> GetAllAsync(int page, int pageSize, CancellationToken ct = default);
 

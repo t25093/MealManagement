@@ -14,5 +14,8 @@ namespace MealManagement.Core.Services
 
         Task<AddParticipantResultDto> AddParticipantAsync(int mealId, AddParticipantDto dto, int currentUserId, CancellationToken ct = default);
         Task RemoveParticipantAsync(int mealId, int participantId, int currentUserId, CancellationToken ct = default);
+
+        // בעלת הארוחה בלבד: נותנת או מבטלת הרשאת עריכה למשתתפת
+        Task SetEditPermissionAsync(int mealId, int participantId, bool canEdit, int currentUserId, CancellationToken ct = default);
     }
 }

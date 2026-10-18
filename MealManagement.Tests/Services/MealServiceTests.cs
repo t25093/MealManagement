@@ -3,6 +3,7 @@ using MealManagement.Core.Entities;
 using MealManagement.Core.Enums;
 using MealManagement.Core.Exceptions;
 using MealManagement.Core.Repositories;
+using MealManagement.Core.Services;
 using MealManagement.Service.Services;
 using MealManagement.Tests.Helpers;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -19,6 +20,7 @@ namespace MealManagement.Tests.Services
         private readonly Mock<IUserRepository> _users = new();
         private readonly Mock<IUserDishAssignmentRepository> _assignments = new();
         private readonly Mock<IUnitOfWork> _unitOfWork = new();
+        private readonly Mock<IEmailNotifications> _emails = new();
 
         private readonly MealService _service;
 
@@ -30,6 +32,7 @@ namespace MealManagement.Tests.Services
                 _users.Object,
                 _assignments.Object,
                 _unitOfWork.Object,
+                _emails.Object,
                 TestMapper.Create(),
                 NullLogger<MealService>.Instance);
         }
@@ -165,6 +168,30 @@ namespace MealManagement.Tests.Services
             Assert.Equal("new@test.com", invitation.Email);
             Assert.Empty(meal.Participants);
             _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+
+            // ונשלח מייל הזמנה להרשמה
+            _emails.Verify(e => e.SendMealInvitationAsync("new@test.com", meal, It.IsAny<string>(), false, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task AddParticipantAsync_RegisteredUser_AddsParticipantAndSendsEmail()
+        {
+            // Arrange
+            var meal = new Meal { Id = 1, OwnerId = OwnerId };
+            var dina = new User { Id = 5, FullName = "דינה", Email = "dina@test.com" };
+            _meals.Setup(m => m.GetForUpdateAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(meal);
+            _users.Setup(u => u.GetByEmailAsync("dina@test.com", It.IsAny<CancellationToken>())).ReturnsAsync(dina);
+            _users.Setup(u => u.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(dina);
+            _users.Setup(u => u.GetByIdAsync(OwnerId, It.IsAny<CancellationToken>()))
+                  .ReturnsAsync(new User { Id = OwnerId, FullName = "שרה" });
+
+            // Act
+            var result = await _service.AddParticipantAsync(1, new AddParticipantDto { Email = "dina@test.com" }, OwnerId);
+
+            // Assert
+            Assert.False(result.IsPending);
+            Assert.Same(dina, Assert.Single(meal.Participants));
+            _emails.Verify(e => e.SendMealInvitationAsync("dina@test.com", meal, "שרה", true, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -186,6 +213,107 @@ namespace MealManagement.Tests.Services
                 _service.AddParticipantAsync(1, new AddParticipantDto { Email = "new@test.com" }, OwnerId));
 
             _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+            _emails.Verify(e => e.SendMealInvitationAsync(It.IsAny<string>(), It.IsAny<Meal>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        // ===== הרשאת עריכה =====
+
+        private const int ParticipantId = 2;
+
+        private Meal ArrangeMealWithParticipant(bool participantCanEdit)
+        {
+            var participant = new User { Id = ParticipantId };
+            var meal = new Meal { Id = 1, OwnerId = OwnerId, Name = "ארוחה", Participants = { participant } };
+            if (participantCanEdit)
+                meal.Editors.Add(participant);
+
+            _meals.Setup(m => m.GetForUpdateAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(meal);
+            return meal;
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ParticipantWithEditPermission_UpdatesMeal()
+        {
+            // Arrange
+            var meal = ArrangeMealWithParticipant(participantCanEdit: true);
+
+            // Act
+            await _service.UpdateAsync(1, new UpdateMealDto { Name = "ארוחת שבת" }, ParticipantId);
+
+            // Assert
+            Assert.Equal("ארוחת שבת", meal.Name);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ParticipantWithoutEditPermission_ThrowsForbiddenAndDoesNotSave()
+        {
+            // Arrange
+            var meal = ArrangeMealWithParticipant(participantCanEdit: false);
+
+            // Act + Assert
+            await Assert.ThrowsAsync<ForbiddenException>(() =>
+                _service.UpdateAsync(1, new UpdateMealDto { Name = "ארוחת שבת" }, ParticipantId));
+
+            Assert.Equal("ארוחה", meal.Name);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task SetEditPermissionAsync_OwnerGrantsAndRevokes_UpdatesEditors()
+        {
+            // Arrange
+            var meal = ArrangeMealWithParticipant(participantCanEdit: false);
+
+            // Act + Assert: מתן הרשאה
+            await _service.SetEditPermissionAsync(1, ParticipantId, canEdit: true, OwnerId);
+            Assert.Equal(ParticipantId, Assert.Single(meal.Editors).Id);
+
+            // Act + Assert: ביטול ההרשאה
+            await _service.SetEditPermissionAsync(1, ParticipantId, canEdit: false, OwnerId);
+            Assert.Empty(meal.Editors);
+
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task SetEditPermissionAsync_ByEditorNotOwner_ThrowsForbidden()
+        {
+            // Arrange: גם עורכת לא יכולה לתת הרשאות, רק בעלת הארוחה
+            ArrangeMealWithParticipant(participantCanEdit: true);
+
+            // Act + Assert
+            await Assert.ThrowsAsync<ForbiddenException>(() =>
+                _service.SetEditPermissionAsync(1, ParticipantId, canEdit: false, ParticipantId));
+
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task SetEditPermissionAsync_UserIsNotParticipant_ThrowsNotFound()
+        {
+            // Arrange
+            ArrangeMealWithParticipant(participantCanEdit: false);
+
+            // Act + Assert
+            await Assert.ThrowsAsync<NotFoundException>(() =>
+                _service.SetEditPermissionAsync(1, 99, canEdit: true, OwnerId));
+        }
+
+        [Fact]
+        public async Task RemoveParticipantAsync_Editor_AlsoLosesEditPermission()
+        {
+            // Arrange
+            var meal = ArrangeMealWithParticipant(participantCanEdit: true);
+            _assignments.Setup(a => a.GetByMealAsync(1, It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<UserDishAssignment>());
+
+            // Act
+            await _service.RemoveParticipantAsync(1, ParticipantId, OwnerId);
+
+            // Assert
+            Assert.Empty(meal.Participants);
+            Assert.Empty(meal.Editors);
         }
     }
 }

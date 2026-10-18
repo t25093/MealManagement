@@ -34,6 +34,12 @@ namespace MealManagement.Data.Repositories
                 .AnyAsync(u => u.Email == email, ct);
         }
 
+        public async Task<User?> GetByPasswordResetTokenHashAsync(string tokenHash, CancellationToken ct = default)
+        {
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.PasswordResetTokenHash == tokenHash, ct);
+        }
+
         public async Task<PagedResult<User>> GetPagedAsync(int page, int pageSize, CancellationToken ct = default)
         {
             var query = _context.Users.AsNoTracking();

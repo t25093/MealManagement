@@ -35,5 +35,24 @@ namespace MealManagement.API.Controllers
         {
             return Ok(await _users.LoginAsync(dto, ct));
         }
+
+        // תמיד 204, גם לאימייל שלא רשום, כדי לא לגלות מי רשומה במערכת
+        [HttpPost("forgot-password")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordDto dto, CancellationToken ct)
+        {
+            await _users.ForgotPasswordAsync(dto, ct);
+            return NoContent();
+        }
+
+        [HttpPost("reset-password")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ResetPassword(ResetPasswordDto dto, CancellationToken ct)
+        {
+            await _users.ResetPasswordAsync(dto, ct);
+            return NoContent();
+        }
     }
 }
