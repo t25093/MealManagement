@@ -35,7 +35,7 @@ services:
     staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
-        value: https://meal-management-api.onrender.com
+        value: https://meal-management-api-phyw.onrender.com
     routes:
       # React Router: כל כתובת מחזירה את index.html
       - type: rewrite
