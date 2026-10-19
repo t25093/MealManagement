@@ -1,0 +1,19 @@
+# שומר את השרת ב-Render ער: Render מרדים שרת חינמי אחרי 15 דקות בלי בקשות,
+# וההתעוררות לוקחת כדקה. כל 10 דקות נשלחת בקשה קלה לכתובת /health.
+# רק בימים א'-ו' ובשעות היום (GitHub עובד לפי שעון UTC: 4-20 הן בערך 6:00 או 7:00 עד 23:00 בישראל),
+# כדי לא לגמור את 750 השעות החינמיות בחודש של Render.
+name: Keep Render awake
+
+on:
+  schedule:
+    - cron: '7,17,27,37,47,57 4-20 * * 0-5'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping /health
+        # אם השרת לא עונה (למשל באמצע עדכון), לא מסמנים כישלון, כדי שלא יישלחו מיילים על הרצות שנכשלו
+        run: curl --silent --show-error --max-time 120 https://meal-management-api-phyw.onrender.com/health || echo "The server did not answer"

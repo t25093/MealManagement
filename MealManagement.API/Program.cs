@@ -219,4 +219,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// בדיקה קלה שהשרת ער, בלי התחברות ובלי בסיס נתונים.
+// האתר שולח אותה כשהוא נפתח, וה-workflow ב-GitHub שולח אותה כדי שהשרת ב-Render לא יירדם.
+app.MapGet("/health", () => Results.Text("ok")).AllowAnonymous();
+
 app.Run();
