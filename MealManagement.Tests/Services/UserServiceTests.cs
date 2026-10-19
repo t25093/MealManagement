@@ -52,6 +52,25 @@ namespace MealManagement.Tests.Services
         }
 
         [Fact]
+        public async Task LoginAsync_EmailWithSpaces_FindsUser()
+        {
+            // Arrange: רווח באמצע ובסוף, למשל מהמקלדת בטלפון
+            var user = new User { Id = 5, Email = "dina@test.com", PasswordHash = "hash" };
+            _users.Setup(u => u.GetByEmailAsync("dina@test.com", It.IsAny<CancellationToken>()))
+                  .ReturnsAsync(user);
+            _passwordHasher.Setup(h => h.Verify("123456", "hash")).Returns(true);
+            _tokenService.Setup(t => t.CreateToken(It.IsAny<UserDto>())).Returns(new AuthResponseDto { Token = "token" });
+
+            var dto = new LoginDto { Email = "Dina @test.com ", Password = "123456" };
+
+            // Act
+            var result = await _service.LoginAsync(dto);
+
+            // Assert
+            Assert.Equal("token", result.Token);
+        }
+
+        [Fact]
         public async Task LoginAsync_WrongPassword_ThrowsUnauthorizedAndDoesNotCreateToken()
         {
             // Arrange

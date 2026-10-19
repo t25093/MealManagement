@@ -82,8 +82,7 @@ namespace MealManagement.Service.Services
                 if (!KashrutRules.IsAllowed(meal.MealType, dish.KosherType))
                     throw new BusinessRuleException($"המאכל \"{dish.Name}\" אינו מתאים לסוג הכשרות של הארוחה");
 
-                if (meal.MealDishes.Any(md => md.DishId == dish.Id))
-                    throw new ConflictException($"המאכל \"{dish.Name}\" כבר נמצא בתפריט");
+                // אותו מאכל יכול להופיע כמה פעמים: כל הוספה היא שורה נוספת בתפריט, עם כמות משלה
 
                 mealDish = new MealDish
                 {

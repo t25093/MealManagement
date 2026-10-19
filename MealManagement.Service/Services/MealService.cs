@@ -209,7 +209,7 @@ namespace MealManagement.Service.Services
             var meal = await GetMealForUpdateOrThrowAsync(mealId, ct);
             EnsureCanEdit(meal, currentUserId);
 
-            var email = dto.Email.Trim().ToLowerInvariant();
+            var email = EmailAddresses.Normalize(dto.Email);
 
             var found = await _users.GetByEmailAsync(email, ct);
 

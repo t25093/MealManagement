@@ -188,7 +188,7 @@ namespace MealManagement.Service.Services
 
         private static string NormalizeEmail(string email)
         {
-            return email.Trim().ToLowerInvariant();
+            return EmailAddresses.Normalize(email);
         }
 
         private static string HashToken(string token)
