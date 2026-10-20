@@ -12,10 +12,12 @@ namespace MealManagement.API.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _users;
+        private readonly IMealService _meals;
 
-        public UsersController(IUserService users)
+        public UsersController(IUserService users, IMealService meals)
         {
             _users = users;
+            _meals = meals;
         }
 
         [HttpGet("me")]
@@ -36,6 +38,34 @@ namespace MealManagement.API.Controllers
             CancellationToken ct = default)
         {
             return Ok(await _users.GetAllAsync(page, pageSize, ct));
+        }
+
+        // פרטי משתמשת אחת: למנהלת המערכת בלבד
+        [HttpGet("{userId:int}")]
+        [Authorize(Policy = "AdminOnly")]
+        [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<UserDto>> GetById(int userId, CancellationToken ct)
+        {
+            return Ok(await _users.GetByIdAsync(userId, ct));
+        }
+
+        // הארוחות של משתמשת מסוימת (בבעלותה או שהיא משתתפת בהן): למנהלת המערכת בלבד.
+        // אותם פרמטרים כמו ב-GET api/meals: role, search, sortBy, page, pageSize
+        [HttpGet("{userId:int}/meals")]
+        [Authorize(Policy = "AdminOnly")]
+        [ProducesResponseType(typeof(PagedResult<MealSummaryDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<PagedResult<MealSummaryDto>>> GetUserMeals(
+            int userId,
+            [FromQuery] MealQueryParams query,
+            CancellationToken ct)
+        {
+            // זורק NotFound אם אין משתמשת כזו
+            await _users.GetByIdAsync(userId, ct);
+            return Ok(await _meals.GetMyMealsAsync(query, userId, ct));
         }
 
         // מחיקת החשבון של המשתמשת המחוברת
