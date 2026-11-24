@@ -63,6 +63,7 @@ builder.Services.AddScoped<IUserDishAssignmentRepository, UserDishAssignmentRepo
 builder.Services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
 builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
 builder.Services.AddScoped<IMealInvitationRepository, MealInvitationRepository>();
+builder.Services.AddScoped<IMealListItemRepository, MealListItemRepository>();
 
 // ===== Service =====
 builder.Services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
@@ -81,6 +82,7 @@ builder.Services.AddScoped<IMealDishService, MealDishService>();
 builder.Services.AddScoped<IUserDishAssignmentService, UserDishAssignmentService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IRecipeService, RecipeService>();
+builder.Services.AddScoped<IMealListItemService, MealListItemService>();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 

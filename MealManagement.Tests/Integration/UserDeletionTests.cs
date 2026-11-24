@@ -1,4 +1,4 @@
-using MealManagement.Core.Entities;
+﻿using MealManagement.Core.Entities;
 using MealManagement.Core.Enums;
 using MealManagement.Core.Services;
 using MealManagement.Data;
@@ -95,6 +95,7 @@ namespace MealManagement.Tests.Integration
                 dinaMeal.Invitations.Add(new MealInvitation { Email = "guest@test.com", CreatedAt = DateTime.UtcNow });
                 dinaMeal.Messages.Add(new ChatMessage { Content = "שלום", SentAt = DateTime.UtcNow, Sender = rachel });
                 dinaMealDish.Assignments.Add(new UserDishAssignment { User = rachel, Quantity = 4, CreatedAt = DateTime.UtcNow });
+                dinaMeal.ListItems.Add(new MealListItem { ListType = MealListType.Shopping, Name = "חלות", CreatedBy = rachel, CreatedAt = DateTime.UtcNow });
 
                 // הארוחה של רחל: דינה משתתפת, לקחה 3 מתוך 5, כתבה הודעה ומתכון
                 var rachelMeal = NewMeal(rachel, "הארוחה של רחל");
@@ -106,6 +107,13 @@ namespace MealManagement.Tests.Integration
                 rachelMeal.Recipes.Add(new Recipe { Title = "עוגה", Content = "מתכון", CreatedAt = DateTime.UtcNow, Author = dina, Dish = dinaDish });
                 rachelMealDish.Assignments.Add(new UserDishAssignment { User = dina, Quantity = 3, CreatedAt = DateTime.UtcNow });
                 rachelMealDish.Assignments.Add(new UserDishAssignment { User = rachel, Quantity = 2, CreatedAt = DateTime.UtcNow });
+                // פריט ברשימה שדינה הוסיפה וסימנה כהובא
+                rachelMeal.ListItems.Add(new MealListItem
+                {
+                    ListType = MealListType.Bring, Name = "מיחם", Note = "מהבית",
+                    IsDone = true, DoneBy = dina, DoneAt = DateTime.UtcNow,
+                    CreatedBy = dina, CreatedAt = DateTime.UtcNow
+                });
 
                 seed.Meals.AddRange(dinaMeal, rachelMeal);
                 await seed.SaveChangesAsync();
@@ -139,6 +147,14 @@ namespace MealManagement.Tests.Integration
             Assert.Empty(rachelMealAfter.Participants);
             Assert.Equal("תודה", Assert.Single(rachelMealAfter.Messages).Content);
             Assert.Empty(rachelMealAfter.Recipes);
+
+            // הרשימות: של דינה נמחקו עם הארוחה. ברשימה של רחל הפריט נשאר מסומן, רק בלי שם של דינה
+            Assert.False(await check.MealListItems.AnyAsync(i => i.MealId == dinaMealId));
+            var listItem = await check.MealListItems.SingleAsync(i => i.MealId == rachelMealId);
+            Assert.Equal("מיחם", listItem.Name);
+            Assert.True(listItem.IsDone);
+            Assert.Null(listItem.DoneByUserId);
+            Assert.Null(listItem.CreatedByUserId);
 
             // ה-3 שדינה לקחה חזרו להיות פנויים, והלקיחה של רחל נשארה
             var mealDish = await check.MealDishes.Include(md => md.Assignments).SingleAsync(md => md.Id == rachelMealDishId);

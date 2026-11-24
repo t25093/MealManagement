@@ -61,6 +61,11 @@ namespace MealManagement.Service.Mapping
                 .ForMember(d => d.DishName, o => o.MapFrom(s =>
                     s.Dish != null ? s.Dish.Name : null));
             CreateMap<CreateRecipeDto, Recipe>(MemberList.Source);
+
+            // ===== רשימות: קניות ולהביא =====
+            CreateMap<MealListItem, MealListItemDto>()
+                .ForMember(d => d.DoneByName, o => o.MapFrom(s => s.DoneBy != null ? s.DoneBy.FullName : null))
+                .ForMember(d => d.CreatedByName, o => o.MapFrom(s => s.CreatedBy != null ? s.CreatedBy.FullName : null));
         }
     }
 }

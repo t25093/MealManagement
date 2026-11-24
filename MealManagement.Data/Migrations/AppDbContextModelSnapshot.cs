@@ -1717,6 +1717,57 @@ namespace MealManagement.Data.Migrations
                     b.ToTable("MealInvitations");
                 });
 
+            modelBuilder.Entity("MealManagement.Core.Entities.MealListItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DoneAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DoneByUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDone")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ListType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("MealId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("DoneByUserId");
+
+                    b.HasIndex("MealId", "ListType");
+
+                    b.ToTable("MealListItems");
+                });
+
             modelBuilder.Entity("MealManagement.Core.Entities.Recipe", b =>
                 {
                     b.Property<int>("Id")
@@ -1962,6 +2013,31 @@ namespace MealManagement.Data.Migrations
                     b.Navigation("Meal");
                 });
 
+            modelBuilder.Entity("MealManagement.Core.Entities.MealListItem", b =>
+                {
+                    b.HasOne("MealManagement.Core.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("MealManagement.Core.Entities.User", "DoneBy")
+                        .WithMany()
+                        .HasForeignKey("DoneByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("MealManagement.Core.Entities.Meal", "Meal")
+                        .WithMany("ListItems")
+                        .HasForeignKey("MealId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("DoneBy");
+
+                    b.Navigation("Meal");
+                });
+
             modelBuilder.Entity("MealManagement.Core.Entities.Recipe", b =>
                 {
                     b.HasOne("MealManagement.Core.Entities.User", "Author")
@@ -2045,6 +2121,8 @@ namespace MealManagement.Data.Migrations
             modelBuilder.Entity("MealManagement.Core.Entities.Meal", b =>
                 {
                     b.Navigation("Invitations");
+
+                    b.Navigation("ListItems");
 
                     b.Navigation("MealDishes");
 

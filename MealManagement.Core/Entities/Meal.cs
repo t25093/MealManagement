@@ -22,6 +22,7 @@ namespace MealManagement.Core.Entities
         public List<User> Participants { get; set; } = new();
         public List<User> Editors { get; set; } = new(); // משתתפות שקיבלו הרשאה לערוך את הארוחה
         public List<Recipe> Recipes { get; set; } = new();
+        public List<MealListItem> ListItems { get; set; } = new(); // רשימת קניות ודברים להביא
         public List<MealInvitation> Invitations { get; set; } = new(); // אימיילים שהוזמנו ועדיין לא נרשמו
     }
 }
