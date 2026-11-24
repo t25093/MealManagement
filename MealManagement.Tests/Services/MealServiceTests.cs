@@ -104,6 +104,30 @@ namespace MealManagement.Tests.Services
             _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
+        // ===== יצירה כפולה =====
+
+        [Fact]
+        public async Task CreateAsync_DuplicateMeal_ThrowsConflictAndDoesNotSave()
+        {
+            // Arrange: כבר קיימת ארוחה עם אותם פרטים
+            _meals.Setup(m => m.ExistsDuplicateAsync(OwnerId, "שבת", MealType.Meat, It.IsAny<DateTime>(), 20, It.IsAny<CancellationToken>()))
+                  .ReturnsAsync(true);
+
+            var dto = new CreateMealDto
+            {
+                Name = "שבת",
+                MealType = MealType.Meat,
+                EventDate = DateTime.UtcNow.AddDays(7),
+                GuestsCount = 20
+            };
+
+            // Act + Assert
+            await Assert.ThrowsAsync<ConflictException>(() => _service.CreateAsync(dto, OwnerId));
+
+            _meals.Verify(m => m.AddAsync(It.IsAny<Meal>(), It.IsAny<CancellationToken>()), Times.Never);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
         // ===== הורדת מספר אורחים =====
 
         [Fact]
@@ -127,6 +151,59 @@ namespace MealManagement.Tests.Services
                 _service.UpdateAsync(1, new UpdateMealDto { GuestsCount = 30 }, OwnerId));
 
             Assert.Equal(50, meal.GuestsCount);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        // ===== שינוי סוג הארוחה =====
+
+        [Fact]
+        public async Task UpdateAsync_ChangeMealType_AllDishesFit_UpdatesType()
+        {
+            // Arrange: ארוחה חלבית עם קוגל פרווה
+            var kugel = new Dish { Id = 3, Name = "קוגל", Category = DishCategory.Side, KosherType = MealType.Parve, QuantityPerPerson = 0.2 };
+            ArrangeDishes(kugel);
+
+            var meal = new Meal
+            {
+                Id = 1,
+                OwnerId = OwnerId,
+                MealType = MealType.Dairy,
+                GuestsCount = 10,
+                MealDishes = { new MealDish { Id = 10, DishId = 3, RequiredQuantity = 2 } }
+            };
+            _meals.Setup(m => m.GetForUpdateAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(meal);
+
+            // Act
+            await _service.UpdateAsync(1, new UpdateMealDto { MealType = MealType.Meat }, OwnerId);
+
+            // Assert
+            Assert.Equal(MealType.Meat, meal.MealType);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ChangeMealType_DishDoesNotFit_ThrowsAndDoesNotSave()
+        {
+            // Arrange: ארוחה חלבית עם לזניה חלבית
+            var lasagna = new Dish { Id = 4, Name = "לזניה", Category = DishCategory.Main, KosherType = MealType.Dairy, QuantityPerPerson = 1 };
+            ArrangeDishes(lasagna);
+
+            var meal = new Meal
+            {
+                Id = 1,
+                OwnerId = OwnerId,
+                MealType = MealType.Dairy,
+                GuestsCount = 10,
+                MealDishes = { new MealDish { Id = 11, DishId = 4, RequiredQuantity = 10 } }
+            };
+            _meals.Setup(m => m.GetForUpdateAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(meal);
+
+            // Act + Assert: אי אפשר להפוך לבשרית כשיש בה מאכל חלבי
+            var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+                _service.UpdateAsync(1, new UpdateMealDto { MealType = MealType.Meat }, OwnerId));
+
+            Assert.Contains("לזניה", ex.Message);
+            Assert.Equal(MealType.Dairy, meal.MealType);
             _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 

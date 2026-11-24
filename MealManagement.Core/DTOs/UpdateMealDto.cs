@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using MealManagement.Core.Enums;
 
 namespace MealManagement.Core.DTOs
 {
@@ -12,5 +13,9 @@ namespace MealManagement.Core.DTOs
         public int? GuestsCount { get; set; }
 
         public DateTime? EventDate { get; set; }
+
+        // סוג הארוחה (חלבית / בשרית)
+        [EnumDataType(typeof(MealType), ErrorMessage = "סוג ארוחה לא תקין")]
+        public MealType? MealType { get; set; }
     }
 }

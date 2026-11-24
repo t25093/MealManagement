@@ -1,0 +1,211 @@
+diff --git a/MealManagement.Core/DTOs/UpdateMealDto.cs b/MealManagement.Core/DTOs/UpdateMealDto.cs
+index 9908b4d..5ecb68d 100644
+--- a/MealManagement.Core/DTOs/UpdateMealDto.cs
++++ b/MealManagement.Core/DTOs/UpdateMealDto.cs
+@@ -1,4 +1,5 @@
+ using System.ComponentModel.DataAnnotations;
++using MealManagement.Core.Enums;
+ 
+ namespace MealManagement.Core.DTOs
+ {
+@@ -12,5 +13,9 @@ namespace MealManagement.Core.DTOs
+         public int? GuestsCount { get; set; }
+ 
+         public DateTime? EventDate { get; set; }
++
++        // סוג הארוחה (חלבית / בשרית)
++        [EnumDataType(typeof(MealType), ErrorMessage = "סוג ארוחה לא תקין")]
++        public MealType? MealType { get; set; }
+     }
+ }
+diff --git a/MealManagement.Core/Repositories/IMealRepository.cs b/MealManagement.Core/Repositories/IMealRepository.cs
+index 6db8be3..4fb1936 100644
+--- a/MealManagement.Core/Repositories/IMealRepository.cs
++++ b/MealManagement.Core/Repositories/IMealRepository.cs
+@@ -1,5 +1,6 @@
+ using MealManagement.Core.DTOs;
+ using MealManagement.Core.Entities;
++using MealManagement.Core.Enums;
+ 
+ namespace MealManagement.Core.Repositories
+ {
+@@ -19,6 +20,9 @@ namespace MealManagement.Core.Repositories
+ 
+         Task<bool> ExistsAsync(int mealId, CancellationToken ct = default);
+ 
++        // האם כבר קיימת לבעלת הארוחה ארוחה עם אותם פרטים בדיוק (הגנה מפני יצירה כפולה)
++        Task<bool> ExistsDuplicateAsync(int ownerId, string name, MealType mealType, DateTime eventDate, int guestsCount, CancellationToken ct = default);
++
+         Task AddAsync(Meal meal, CancellationToken ct = default);
+         void Remove(Meal meal);
+     }
+diff --git a/MealManagement.Data/Repositories/MealRepository.cs b/MealManagement.Data/Repositories/MealRepository.cs
+index 621917f..17b6ed8 100644
+--- a/MealManagement.Data/Repositories/MealRepository.cs
++++ b/MealManagement.Data/Repositories/MealRepository.cs
+@@ -1,5 +1,6 @@
+ ﻿using MealManagement.Core.DTOs;
+ using MealManagement.Core.Entities;
++using MealManagement.Core.Enums;
+ using MealManagement.Core.Repositories;
+ using Microsoft.EntityFrameworkCore;
+ 
+@@ -96,6 +97,16 @@ namespace MealManagement.Data.Repositories
+             return await _context.Meals.AnyAsync(m => m.Id == mealId, ct);
+         }
+ 
++        public async Task<bool> ExistsDuplicateAsync(int ownerId, string name, MealType mealType, DateTime eventDate, int guestsCount, CancellationToken ct = default)
++        {
++            return await _context.Meals.AnyAsync(m =>
++                m.OwnerId == ownerId &&
++                m.Name == name &&
++                m.MealType == mealType &&
++                m.EventDate == eventDate &&
++                m.GuestsCount == guestsCount, ct);
++        }
++
+         public async Task AddAsync(Meal meal, CancellationToken ct = default)
+         {
+             await _context.Meals.AddAsync(meal, ct);
+diff --git a/MealManagement.Service/Services/MealService.cs b/MealManagement.Service/Services/MealService.cs
+index 8e10741..8970e7e 100644
+--- a/MealManagement.Service/Services/MealService.cs
++++ b/MealManagement.Service/Services/MealService.cs
+@@ -43,6 +43,10 @@ namespace MealManagement.Service.Services
+ 
+         public async Task<MealDetailsDto> CreateAsync(CreateMealDto dto, int currentUserId, CancellationToken ct = default)
+         {
++            // 0. הגנה מפני יצירה כפולה (למשל לחיצה חוזרת על כפתור היצירה)
++            if (await _meals.ExistsDuplicateAsync(currentUserId, dto.Name, dto.MealType, ToUtc(dto.EventDate), dto.GuestsCount, ct))
++                throw new ConflictException("כבר קיימת ארוחה עם אותם פרטים בדיוק");
++
+             // 1. שליפת כל המאכלים שנבחרו, בשאילתה אחת
+             var dishIds = dto.MenuItems
+                 .Where(i => i.DishId.HasValue)
+@@ -146,6 +150,31 @@ namespace MealManagement.Service.Services
+             var meal = await GetMealForUpdateOrThrowAsync(mealId, ct);
+             EnsureCanEdit(meal, currentUserId);
+ 
++            // שינוי סוג הארוחה: כל המאכלים שכבר בארוחה חייבים להתאים לסוג החדש
++            if (dto.MealType.HasValue && dto.MealType.Value != meal.MealType)
++            {
++                var newMealType = dto.MealType.Value;
++
++                var mealDishIds = meal.MealDishes
++                    .Where(md => md.DishId.HasValue)
++                    .Select(md => md.DishId!.Value)
++                    .Distinct()
++                    .ToList();
++
++                var notAllowed = mealDishIds.Count == 0
++                    ? new List<string>()
++                    : (await _dishes.GetByIdsAsync(mealDishIds, ct))
++                        .Where(d => !KashrutRules.IsAllowed(newMealType, d.KosherType))
++                        .Select(d => d.Name)
++                        .ToList();
++
++                if (notAllowed.Count > 0)
++                    throw new BusinessRuleException(
++                        $"לא ניתן לשנות את סוג הארוחה: המאכלים הבאים אינם מתאימים לסוג החדש. יש להסיר אותם קודם: {string.Join(", ", notAllowed)}");
++
++                meal.MealType = newMealType;
++            }
++
+             if (!string.IsNullOrWhiteSpace(dto.Name))
+                 meal.Name = dto.Name.Trim();
+ 
+diff --git a/MealManagement.Tests/Services/MealServiceTests.cs b/MealManagement.Tests/Services/MealServiceTests.cs
+index a9f6025..172314b 100644
+--- a/MealManagement.Tests/Services/MealServiceTests.cs
++++ b/MealManagement.Tests/Services/MealServiceTests.cs
+@@ -104,6 +104,30 @@ namespace MealManagement.Tests.Services
+             _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+         }
+ 
++        // ===== יצירה כפולה =====
++
++        [Fact]
++        public async Task CreateAsync_DuplicateMeal_ThrowsConflictAndDoesNotSave()
++        {
++            // Arrange: כבר קיימת ארוחה עם אותם פרטים
++            _meals.Setup(m => m.ExistsDuplicateAsync(OwnerId, "שבת", MealType.Meat, It.IsAny<DateTime>(), 20, It.IsAny<CancellationToken>()))
++                  .ReturnsAsync(true);
++
++            var dto = new CreateMealDto
++            {
++                Name = "שבת",
++                MealType = MealType.Meat,
++                EventDate = DateTime.UtcNow.AddDays(7),
++                GuestsCount = 20
++            };
++
++            // Act + Assert
++            await Assert.ThrowsAsync<ConflictException>(() => _service.CreateAsync(dto, OwnerId));
++
++            _meals.Verify(m => m.AddAsync(It.IsAny<Meal>(), It.IsAny<CancellationToken>()), Times.Never);
++            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
++        }
++
+         // ===== הורדת מספר אורחים =====
+ 
+         [Fact]
+@@ -130,6 +154,59 @@ namespace MealManagement.Tests.Services
+             _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+         }
+ 
++        // ===== שינוי סוג הארוחה =====
++
++        [Fact]
++        public async Task UpdateAsync_ChangeMealType_AllDishesFit_UpdatesType()
++        {
++            // Arrange: ארוחה חלבית עם קוגל פרווה
++            var kugel = new Dish { Id = 3, Name = "קוגל", Category = DishCategory.Side, KosherType = MealType.Parve, QuantityPerPerson = 0.2 };
++            ArrangeDishes(kugel);
++
++            var meal = new Meal
++            {
++                Id = 1,
++                OwnerId = OwnerId,
++                MealType = MealType.Dairy,
++                GuestsCount = 10,
++                MealDishes = { new MealDish { Id = 10, DishId = 3, RequiredQuantity = 2 } }
++            };
++            _meals.Setup(m => m.GetForUpdateAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(meal);
++
++            // Act
++            await _service.UpdateAsync(1, new UpdateMealDto { MealType = MealType.Meat }, OwnerId);
++
++            // Assert
++            Assert.Equal(MealType.Meat, meal.MealType);
++            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
++        }
++
++        [Fact]
++        public async Task UpdateAsync_ChangeMealType_DishDoesNotFit_ThrowsAndDoesNotSave()
++        {
++            // Arrange: ארוחה חלבית עם לזניה חלבית
++            var lasagna = new Dish { Id = 4, Name = "לזניה", Category = DishCategory.Main, KosherType = MealType.Dairy, QuantityPerPerson = 1 };
++            ArrangeDishes(lasagna);
++
++            var meal = new Meal
++            {
++                Id = 1,
++                OwnerId = OwnerId,
++                MealType = MealType.Dairy,
++                GuestsCount = 10,
++                MealDishes = { new MealDish { Id = 11, DishId = 4, RequiredQuantity = 10 } }
++            };
++            _meals.Setup(m => m.GetForUpdateAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(meal);
++
++            // Act + Assert: אי אפשר להפוך לבשרית כשיש בה מאכל חלבי
++            var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
++                _service.UpdateAsync(1, new UpdateMealDto { MealType = MealType.Meat }, OwnerId));
++
++            Assert.Contains("לזניה", ex.Message);
++            Assert.Equal(MealType.Dairy, meal.MealType);
++            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
++        }
++
+         // ===== הרשאה לפרטי ארוחה =====
+ 
+         [Fact]

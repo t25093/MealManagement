@@ -43,6 +43,10 @@ namespace MealManagement.Service.Services
 
         public async Task<MealDetailsDto> CreateAsync(CreateMealDto dto, int currentUserId, CancellationToken ct = default)
         {
+            // 0. הגנה מפני יצירה כפולה (למשל לחיצה חוזרת על כפתור היצירה)
+            if (await _meals.ExistsDuplicateAsync(currentUserId, dto.Name, dto.MealType, ToUtc(dto.EventDate), dto.GuestsCount, ct))
+                throw new ConflictException("כבר קיימת ארוחה עם אותם פרטים בדיוק");
+
             // 1. שליפת כל המאכלים שנבחרו, בשאילתה אחת
             var dishIds = dto.MenuItems
                 .Where(i => i.DishId.HasValue)
@@ -145,6 +149,31 @@ namespace MealManagement.Service.Services
         {
             var meal = await GetMealForUpdateOrThrowAsync(mealId, ct);
             EnsureCanEdit(meal, currentUserId);
+
+            // שינוי סוג הארוחה: כל המאכלים שכבר בארוחה חייבים להתאים לסוג החדש
+            if (dto.MealType.HasValue && dto.MealType.Value != meal.MealType)
+            {
+                var newMealType = dto.MealType.Value;
+
+                var mealDishIds = meal.MealDishes
+                    .Where(md => md.DishId.HasValue)
+                    .Select(md => md.DishId!.Value)
+                    .Distinct()
+                    .ToList();
+
+                var notAllowed = mealDishIds.Count == 0
+                    ? new List<string>()
+                    : (await _dishes.GetByIdsAsync(mealDishIds, ct))
+                        .Where(d => !KashrutRules.IsAllowed(newMealType, d.KosherType))
+                        .Select(d => d.Name)
+                        .ToList();
+
+                if (notAllowed.Count > 0)
+                    throw new BusinessRuleException(
+                        $"לא ניתן לשנות את סוג הארוחה: המאכלים הבאים אינם מתאימים לסוג החדש. יש להסיר אותם קודם: {string.Join(", ", notAllowed)}");
+
+                meal.MealType = newMealType;
+            }
 
             if (!string.IsNullOrWhiteSpace(dto.Name))
                 meal.Name = dto.Name.Trim();

@@ -1,5 +1,6 @@
 ﻿using MealManagement.Core.DTOs;
 using MealManagement.Core.Entities;
+using MealManagement.Core.Enums;
 using MealManagement.Core.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -94,6 +95,16 @@ namespace MealManagement.Data.Repositories
         public async Task<bool> ExistsAsync(int mealId, CancellationToken ct = default)
         {
             return await _context.Meals.AnyAsync(m => m.Id == mealId, ct);
+        }
+
+        public async Task<bool> ExistsDuplicateAsync(int ownerId, string name, MealType mealType, DateTime eventDate, int guestsCount, CancellationToken ct = default)
+        {
+            return await _context.Meals.AnyAsync(m =>
+                m.OwnerId == ownerId &&
+                m.Name == name &&
+                m.MealType == mealType &&
+                m.EventDate == eventDate &&
+                m.GuestsCount == guestsCount, ct);
         }
 
         public async Task AddAsync(Meal meal, CancellationToken ct = default)

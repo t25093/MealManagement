@@ -1,5 +1,6 @@
 using MealManagement.Core.DTOs;
 using MealManagement.Core.Entities;
+using MealManagement.Core.Enums;
 
 namespace MealManagement.Core.Repositories
 {
@@ -18,6 +19,9 @@ namespace MealManagement.Core.Repositories
         Task<bool> HasAccessAsync(int mealId, int userId, CancellationToken ct = default);
 
         Task<bool> ExistsAsync(int mealId, CancellationToken ct = default);
+
+        // האם כבר קיימת לבעלת הארוחה ארוחה עם אותם פרטים בדיוק (הגנה מפני יצירה כפולה)
+        Task<bool> ExistsDuplicateAsync(int ownerId, string name, MealType mealType, DateTime eventDate, int guestsCount, CancellationToken ct = default);
 
         Task AddAsync(Meal meal, CancellationToken ct = default);
         void Remove(Meal meal);
