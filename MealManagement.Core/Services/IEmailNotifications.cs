@@ -1,4 +1,4 @@
-﻿using MealManagement.Core.Entities;
+using MealManagement.Core.Entities;
 
 namespace MealManagement.Core.Services
 {
@@ -7,6 +7,9 @@ namespace MealManagement.Core.Services
     {
         // isRegistered: משתמשת רשומה מקבלת קישור לארוחה, ומי שלא רשומה מקבלת הזמנה להירשם
         Task SendMealInvitationAsync(string toEmail, Meal meal, string inviterName, bool isRegistered, CancellationToken ct = default);
+
+        // מנהלת המערכת שיבצה משתמשת להכין מנה בארוחה
+        Task SendDishAssignedAsync(User user, Meal meal, Dish dish, double quantity, string assignerName, CancellationToken ct = default);
 
         Task SendPasswordResetAsync(User user, string token, CancellationToken ct = default);
     }

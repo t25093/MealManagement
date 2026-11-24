@@ -3,6 +3,7 @@ using MealManagement.Core.Entities;
 using MealManagement.Core.Enums;
 using MealManagement.Core.Exceptions;
 using MealManagement.Core.Repositories;
+using MealManagement.Core.Services;
 using MealManagement.Service.Services;
 using MealManagement.Tests.Helpers;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -24,6 +25,7 @@ namespace MealManagement.Tests.Services
         private readonly Mock<IDishRepository> _dishes = new();
         private readonly Mock<IUserRepository> _users = new();
         private readonly Mock<IUnitOfWork> _unitOfWork = new();
+        private readonly Mock<IEmailNotifications> _emails = new();
 
         private readonly UserDishAssignmentService _service;
 
@@ -43,6 +45,7 @@ namespace MealManagement.Tests.Services
                 _dishes.Object,
                 _users.Object,
                 _unitOfWork.Object,
+                _emails.Object,
                 TestMapper.Create(),
                 NullLogger<UserDishAssignmentService>.Instance);
         }
@@ -211,7 +214,8 @@ namespace MealManagement.Tests.Services
         [Fact]
         public async Task TakeAsync_AdminAssignsByEmail_CreatesAssignmentForThatUser()
         {
-            ArrangeMealDish(required: 60, assigned: 20);
+            var mealDish = ArrangeMealDish(required: 60, assigned: 20);
+            mealDish.Dish = new Dish { Id = 5, Name = "קוגל", Category = DishCategory.Main };
             _users.Setup(u => u.GetByEmailAsync("dana@example.com", It.IsAny<CancellationToken>()))
                   .ReturnsAsync(new User { Id = ParticipantId, Email = "dana@example.com" });
 
@@ -219,6 +223,10 @@ namespace MealManagement.Tests.Services
             var result = await _service.TakeAsync(MealId, MealDishId, dto, AdminId, isAdmin: true);
 
             Assert.Equal(ParticipantId, result.UserId);
+            _emails.Verify(e => e.SendDishAssignedAsync(
+                    It.Is<User>(u => u.Id == ParticipantId), It.IsAny<Meal>(), It.IsAny<Dish>(), 10,
+                    It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                Times.Once);
             _assignments.Verify(a => a.AddAsync(
                     It.Is<UserDishAssignment>(x => x.UserId == ParticipantId && x.Quantity == 10),
                     It.IsAny<CancellationToken>()),

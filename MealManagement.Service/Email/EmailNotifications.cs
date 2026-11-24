@@ -1,4 +1,4 @@
-﻿using MealManagement.Core.Entities;
+using MealManagement.Core.Entities;
 using MealManagement.Core.Enums;
 using MealManagement.Core.Services;
 using MealManagement.Core.Settings;
@@ -76,6 +76,31 @@ namespace MealManagement.Service.Email
             }
 
             return SendSafelyAsync(toEmail, subject, Layout(preheader, body), ct);
+        }
+
+        public Task SendDishAssignedAsync(User user, Meal meal, Dish dish, double quantity, string assignerName, CancellationToken ct = default)
+        {
+            var mealName = WebUtility.HtmlEncode(meal.Name);
+            var dishName = WebUtility.HtmlEncode(dish.Name);
+            var assigner = WebUtility.HtmlEncode(assignerName);
+            var when = FormatIsraelTime(meal.EventDate);
+            var amount = $"{Math.Round(quantity, 2).ToString(CultureInfo.InvariantCulture)} {UnitName(dish.Unit)}";
+            var url = Link($"/meals/{meal.Id}");
+
+            var body = Heading("שובצת להכין מנה")
+                     + Paragraph($"שלום {WebUtility.HtmlEncode(user.FullName)},")
+                     + Paragraph($"{assigner} שיבצה אותך להכין <b>{dishName}</b> לארוחה <b>{mealName}</b>.")
+                     + DetailsTable(
+                           ("מנה", $"<b>{dishName}</b>"),
+                           ("כמות", amount),
+                           ("ארוחה", mealName),
+                           ("מתי", when))
+                     + Paragraph("אפשר להיכנס לארוחה כדי לראות את כל הפרטים ולהצטרף לצ'אט של המשתתפות.")
+                     + Button(url, "מעבר לארוחה")
+                     + FallbackLink(url);
+
+            return SendSafelyAsync(user.Email, $"שובצת להכין {dish.Name} לארוחה \"{meal.Name}\"",
+                Layout($"{assignerName} שיבצה אותך להכין {dish.Name}.", body), ct);
         }
 
         public Task SendPasswordResetAsync(User user, string token, CancellationToken ct = default)
@@ -191,6 +216,18 @@ namespace MealManagement.Service.Email
                  + "</td></tr>"
                  + "</table></td></tr></table></body></html>";
         }
+
+        private static string UnitName(MeasureUnit unit) => unit switch
+        {
+            MeasureUnit.Unit => "יחידות",
+            MeasureUnit.Portion => "מנות",
+            MeasureUnit.Gram => "גרם",
+            MeasureUnit.Kilogram => "ק\"ג",
+            MeasureUnit.Milliliter => "מ\"ל",
+            MeasureUnit.Liter => "ליטר",
+            MeasureUnit.Cup => "כוסות",
+            _ => "",
+        };
 
         private static string MealTypeName(MealType type) => type switch
         {

@@ -19,6 +19,7 @@ namespace MealManagement.Service.Services
         private readonly IDishRepository _dishes;
         private readonly IUserRepository _users;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IEmailNotifications _emails;
         private readonly IMapper _mapper;
         private readonly ILogger<UserDishAssignmentService> _logger;
 
@@ -29,6 +30,7 @@ namespace MealManagement.Service.Services
             IDishRepository dishes,
             IUserRepository users,
             IUnitOfWork unitOfWork,
+            IEmailNotifications emails,
             IMapper mapper,
             ILogger<UserDishAssignmentService> logger)
         {
@@ -38,6 +40,7 @@ namespace MealManagement.Service.Services
             _dishes = dishes;
             _users = users;
             _unitOfWork = unitOfWork;
+            _emails = emails;
             _mapper = mapper;
             _logger = logger;
         }
@@ -108,6 +111,15 @@ namespace MealManagement.Service.Services
             var result = _mapper.Map<AssignmentDto>(assignment);
             var user = await _users.GetByIdAsync(assigneeId, ct);
             result.UserName = user?.FullName ?? string.Empty;
+
+            // שיבוץ של משתמשת אחרת: היא מקבלת מייל עם פרטי המנה
+            if (assigneeId != currentUserId && user != null && mealDish.Dish != null)
+            {
+                var assigner = await _users.GetByIdAsync(currentUserId, ct);
+                await _emails.SendDishAssignedAsync(user, mealDish.Meal, mealDish.Dish, dto.Quantity,
+                    assigner?.FullName ?? "מנהלת המערכת", ct);
+            }
+
             return result;
         }
 
