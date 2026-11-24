@@ -1,4 +1,4 @@
-﻿using MealManagement.Core.Entities;
+using MealManagement.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,6 +16,11 @@ namespace MealManagement.Data.Configurations
             builder.HasIndex(a => new { a.MealDishId, a.UserId })
                 .IsUnique();
 
+            builder.Property(a => a.PendingEmail)
+                .HasMaxLength(256);
+
+            builder.HasIndex(a => a.PendingEmail);
+
             builder.HasOne(a => a.MealDish)
                 .WithMany(md => md.Assignments)
                 .HasForeignKey(a => a.MealDishId)
@@ -24,6 +29,7 @@ namespace MealManagement.Data.Configurations
             builder.HasOne(a => a.User)
                 .WithMany(u => u.Assignments)
                 .HasForeignKey(a => a.UserId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

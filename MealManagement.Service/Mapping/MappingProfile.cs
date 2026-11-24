@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MealManagement.Core.DTOs;
 using MealManagement.Core.Entities;
 using MealManagement.Core.Enums;
@@ -18,7 +18,8 @@ namespace MealManagement.Service.Mapping
 
             // ===== הקצאות =====
             CreateMap<UserDishAssignment, AssignmentDto>()
-                .ForMember(d => d.UserName, o => o.MapFrom(s => s.User.FullName));
+                .ForMember(d => d.UserName, o => o.MapFrom(s => s.User != null ? s.User.FullName : s.PendingEmail))
+                .ForMember(d => d.IsPending, o => o.MapFrom(s => s.UserId == null));
 
             // ===== מנה בארוחה (המשאב המוגבל) =====
             CreateMap<MealDish, MealDishDto>()

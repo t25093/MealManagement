@@ -57,14 +57,15 @@ namespace MealManagement.Service.Services
 
             // 2. הרשאה: בעלת הארוחה או משתתפת.
             //    בעלת הארוחה (או עורכת, או מנהלת המערכת) יכולה לשבץ משתמשת אחרת לפי אימייל
-            var assigneeId = currentUserId;
+            int? assigneeId = currentUserId;
+            string? pendingEmail = null;
 
             if (!string.IsNullOrWhiteSpace(dto.AssignToEmail))
             {
                 if (!isAdmin && !MealPermissions.CanEdit(mealDish.Meal, currentUserId))
                     throw new ForbiddenException("רק בעלת הארוחה יכולה לשבץ משתמשת אחרת");
 
-                assigneeId = await ResolveAssigneeAsync(mealId, dto.AssignToEmail, ct);
+                (assigneeId, pendingEmail) = await ResolveAssigneeAsync(mealId, dto.AssignToEmail, ct);
             }
             else if (!await _meals.HasAccessAsync(mealId, currentUserId, ct))
             {
@@ -84,7 +85,9 @@ namespace MealManagement.Service.Services
             // 5. עדכון בזיכרון
             mealDish.AssignedQuantity += dto.Quantity;
 
-            var assignment = await _assignments.GetByMealDishAndUserAsync(mealDish.Id, assigneeId, ct);
+            var assignment = assigneeId.HasValue
+                ? await _assignments.GetByMealDishAndUserAsync(mealDish.Id, assigneeId.Value, ct)
+                : await _assignments.GetByMealDishAndPendingEmailAsync(mealDish.Id, pendingEmail!, ct);
 
             if (assignment != null)
             {
@@ -96,6 +99,7 @@ namespace MealManagement.Service.Services
                 {
                     MealDish = mealDish,
                     UserId = assigneeId,
+                    PendingEmail = pendingEmail,
                     Quantity = dto.Quantity,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -110,17 +114,17 @@ namespace MealManagement.Service.Services
                 assigneeId, dto.Quantity, mealDish.Id, mealId);
 
             var result = _mapper.Map<AssignmentDto>(assignment);
-            var user = await _users.GetByIdAsync(assigneeId, ct);
-            result.UserName = user?.FullName ?? string.Empty;
-
-            // שיבוץ של משתמשת אחרת: היא מקבלת מייל עם פרטי המנה
-            if (assigneeId != currentUserId && user != null && mealDish.Dish != null)
+            if (assigneeId.HasValue)
             {
-                var assigner = await _users.GetByIdAsync(currentUserId, ct);
-                await _emails.SendDishAssignedAsync(user, mealDish.Meal, mealDish.Dish, dto.Quantity,
-                    assigner?.FullName ?? "בעלת הארוחה", ct);
+                var user = await _users.GetByIdAsync(assigneeId.Value, ct);
+                result.UserName = user?.FullName ?? string.Empty;
+            }
+            else
+            {
+                result.UserName = pendingEmail!;
             }
 
+            // המייל למשובצות נשלח בנפרד, מייל אחד לכל אחת עם כל המנות שלה (NotifyAssigneesAsync)
             return result;
         }
 
@@ -167,14 +171,65 @@ namespace MealManagement.Service.Services
                 assignmentId, currentUserId, assignment.Quantity, assignment.MealDishId);
         }
 
-        // ===== פונקציית עזר: המשתמשת שמנהלת המערכת משבצת לפי אימייל =====
+        // ===== מייל למשובצות: מייל אחד לכל אחת, עם כל המנות שלה בארוחה =====
 
-        private async Task<int> ResolveAssigneeAsync(int mealId, string email, CancellationToken ct)
+        public async Task<int> NotifyAssigneesAsync(int mealId, int currentUserId, bool isAdmin = false, CancellationToken ct = default)
+        {
+            var meal = await _meals.GetDetailsAsync(mealId, ct)
+                ?? throw new NotFoundException("הארוחה לא נמצאה");
+
+            if (!isAdmin && !MealPermissions.CanEdit(meal, currentUserId))
+                throw new ForbiddenException("רק בעלת הארוחה יכולה לשלוח מייל למשובצות");
+
+            var assignments = await _assignments.GetByMealAsync(mealId, ct);
+
+            // כולן חוץ ממי ששולחת (היא יודעת מה היא מכינה)
+            var groups = assignments
+                .Where(a => a.UserId != currentUserId && a.MealDish.Dish != null)
+                .GroupBy(a => a.User?.Email ?? a.PendingEmail!)
+                .ToList();
+
+            if (groups.Count == 0)
+                throw new BusinessRuleException("אין משובצות לשלוח להן מייל");
+
+            var sender = await _users.GetByIdAsync(currentUserId, ct);
+            var senderName = sender?.FullName ?? "בעלת הארוחה";
+
+            foreach (var group in groups)
+            {
+                var first = group.First();
+                var items = group
+                    .Select(a => new AssignedDishItem(a.MealDish.Dish!.Name, a.Quantity, a.MealDish.Dish.Unit))
+                    .ToList();
+
+                await _emails.SendDishesAssignedAsync(group.Key, first.User?.FullName, first.UserId == null,
+                    meal, items, senderName, ct);
+            }
+
+            _logger.LogInformation("Assignment emails sent for meal {MealId} to {Count} people", mealId, groups.Count);
+            return groups.Count;
+        }
+
+        // ===== פונקציית עזר: מי משובצת לפי אימייל =====
+        // משתמשת רשומה: המזהה שלה. מוזמנת לארוחה שעוד לא נרשמה: האימייל שלה
+
+        private async Task<(int? UserId, string? PendingEmail)> ResolveAssigneeAsync(int mealId, string email, CancellationToken ct)
         {
             var normalized = EmailAddresses.Normalize(email);
 
-            var user = await _users.GetByEmailAsync(normalized, ct)
-                ?? throw new NotFoundException($"לא נמצאה משתמשת רשומה עם האימייל {normalized}");
+            var user = await _users.GetByEmailAsync(normalized, ct);
+
+            if (user == null)
+            {
+                var invitedMeal = await _meals.GetForUpdateAsync(mealId, ct)
+                    ?? throw new NotFoundException("הארוחה לא נמצאה");
+
+                if (!invitedMeal.Invitations.Any(i => i.Email == normalized))
+                    throw new NotFoundException(
+                        $"האימייל {normalized} לא רשום במערכת ולא הוזמן לארוחה. אפשר להזמין אותו בלשונית \"משתתפות\" ואז לשבץ");
+
+                return (null, normalized);
+            }
 
             // משתמשת שעוד לא בארוחה מצורפת אליה כמשתתפת, כדי שתראה את המנה
             if (!await _meals.HasAccessAsync(mealId, user.Id, ct))
@@ -186,7 +241,7 @@ namespace MealManagement.Service.Services
                 meal.Participants.Add(participant);
             }
 
-            return user.Id;
+            return (user.Id, null);
         }
 
         // ===== פונקציית עזר: בחירת מאכל למנה בלתי מוגדרת =====

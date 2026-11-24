@@ -1,3 +1,4 @@
+using MealManagement.Core.DTOs;
 using MealManagement.Core.Entities;
 using MealManagement.Core.Enums;
 using MealManagement.Core.Services;
@@ -78,29 +79,46 @@ namespace MealManagement.Service.Email
             return SendSafelyAsync(toEmail, subject, Layout(preheader, body), ct);
         }
 
-        public Task SendDishAssignedAsync(User user, Meal meal, Dish dish, double quantity, string assignerName, CancellationToken ct = default)
+        public Task SendDishesAssignedAsync(string toEmail, string? fullName, bool isPending, Meal meal,
+            IReadOnlyList<AssignedDishItem> items, string senderName, CancellationToken ct = default)
         {
             var mealName = WebUtility.HtmlEncode(meal.Name);
-            var dishName = WebUtility.HtmlEncode(dish.Name);
-            var assigner = WebUtility.HtmlEncode(assignerName);
+            var sender = WebUtility.HtmlEncode(senderName);
             var when = FormatIsraelTime(meal.EventDate);
-            var amount = $"{Math.Round(quantity, 2).ToString(CultureInfo.InvariantCulture)} {UnitName(dish.Unit)}";
-            var url = Link($"/meals/{meal.Id}");
 
-            var body = Heading("שובצת להכין מנה")
-                     + Paragraph($"שלום {WebUtility.HtmlEncode(user.FullName)},")
-                     + Paragraph($"{assigner} שיבצה אותך להכין <b>{dishName}</b> לארוחה <b>{mealName}</b>.")
-                     + DetailsTable(
-                           ("מנה", $"<b>{dishName}</b>"),
-                           ("כמות", amount),
-                           ("ארוחה", mealName),
-                           ("מתי", when))
-                     + Paragraph("אפשר להיכנס לארוחה כדי לראות את כל הפרטים ולהצטרף לצ'אט של המשתתפות.")
-                     + Button(url, "מעבר לארוחה")
+            // טבלת המנות: שם המנה והכמות
+            var dishes = DetailsTable(items
+                .Select(i => (WebUtility.HtmlEncode(i.DishName),
+                    (string?)$"{Math.Round(i.Quantity, 2).ToString(CultureInfo.InvariantCulture)} {UnitName(i.Unit)}"))
+                .ToArray());
+
+            var greeting = string.IsNullOrWhiteSpace(fullName) ? "שלום," : $"שלום {WebUtility.HtmlEncode(fullName)},";
+            var count = items.Count == 1 ? "מנה אחת" : $"{items.Count} מנות";
+
+            string url, button, footer;
+            if (isPending)
+            {
+                url = Link("/login");
+                button = "להרשמה ולצפייה בארוחה";
+                footer = $"כדי לראות את הארוחה, נרשמים לאתר עם כתובת המייל הזו (<span dir=\"ltr\">{WebUtility.HtmlEncode(toEmail)}</span>). המנות יופיעו מיד על שמך.";
+            }
+            else
+            {
+                url = Link($"/meals/{meal.Id}");
+                button = "מעבר לארוחה";
+                footer = "אפשר להיכנס לארוחה כדי לראות את כל הפרטים ולהצטרף לצ'אט של המשתתפות.";
+            }
+
+            var body = Heading("המנות שלך לארוחה")
+                     + Paragraph(greeting)
+                     + Paragraph($"{sender} שיבצה אותך להכין {count} לארוחה <b>{mealName}</b> ב-{when}:")
+                     + dishes
+                     + Paragraph(footer)
+                     + Button(url, button)
                      + FallbackLink(url);
 
-            return SendSafelyAsync(user.Email, $"שובצת להכין {dish.Name} לארוחה \"{meal.Name}\"",
-                Layout($"{assignerName} שיבצה אותך להכין {dish.Name}.", body), ct);
+            return SendSafelyAsync(toEmail, $"המנות שלך לארוחה \"{meal.Name}\"",
+                Layout($"{senderName} שיבצה אותך להכין {count}.", body), ct);
         }
 
         public Task SendPasswordResetAsync(User user, string token, CancellationToken ct = default)

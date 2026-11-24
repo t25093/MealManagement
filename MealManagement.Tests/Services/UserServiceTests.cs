@@ -15,6 +15,7 @@ namespace MealManagement.Tests.Services
     {
         private readonly Mock<IUserRepository> _users = new();
         private readonly Mock<IMealInvitationRepository> _invitations = new();
+        private readonly Mock<IUserDishAssignmentRepository> _assignments = new();
         private readonly Mock<IUnitOfWork> _unitOfWork = new();
         private readonly Mock<IPasswordHasher> _passwordHasher = new();
         private readonly Mock<ITokenService> _tokenService = new();
@@ -24,9 +25,14 @@ namespace MealManagement.Tests.Services
 
         public UserServiceTests()
         {
+            // ברירת מחדל: אין שיבוצים שמחכים לאימייל
+            _assignments.Setup(a => a.GetPendingByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<UserDishAssignment>());
+
             _service = new UserService(
                 _users.Object,
                 _invitations.Object,
+                _assignments.Object,
                 _unitOfWork.Object,
                 _passwordHasher.Object,
                 _tokenService.Object,
@@ -256,6 +262,23 @@ namespace MealManagement.Tests.Services
 
             Assert.Equal("old", user.PasswordHash);
             _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task RegisterAsync_PendingAssignments_MoveToTheNewUser()
+        {
+            var pending = new UserDishAssignment { PendingEmail = "guest@test.com", Quantity = 2 };
+            _assignments.Setup(a => a.GetPendingByEmailAsync("guest@test.com", It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<UserDishAssignment> { pending });
+            _invitations.Setup(i => i.GetByEmailAsync("guest@test.com", It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<MealInvitation>());
+            _tokenService.Setup(t => t.CreateToken(It.IsAny<UserDto>())).Returns(new AuthResponseDto());
+
+            await _service.RegisterAsync(new RegisterDto { FullName = "אורחת", Email = "Guest@test.com", Password = "123456" });
+
+            Assert.NotNull(pending.User);
+            Assert.Equal("guest@test.com", pending.User!.Email);
+            Assert.Null(pending.PendingEmail);
         }
     }
 }

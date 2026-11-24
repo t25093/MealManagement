@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MealManagement.Core.DTOs;
 using MealManagement.Core.Entities;
 using MealManagement.Core.Enums;
@@ -18,6 +18,7 @@ namespace MealManagement.Service.Services
 
         private readonly IUserRepository _users;
         private readonly IMealInvitationRepository _invitations;
+        private readonly IUserDishAssignmentRepository _assignments;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPasswordHasher _passwordHasher;
         private readonly ITokenService _tokenService;
@@ -28,6 +29,7 @@ namespace MealManagement.Service.Services
         public UserService(
             IUserRepository users,
             IMealInvitationRepository invitations,
+            IUserDishAssignmentRepository assignments,
             IUnitOfWork unitOfWork,
             IPasswordHasher passwordHasher,
             ITokenService tokenService,
@@ -37,6 +39,7 @@ namespace MealManagement.Service.Services
         {
             _users = users;
             _invitations = invitations;
+            _assignments = assignments;
             _unitOfWork = unitOfWork;
             _passwordHasher = passwordHasher;
             _tokenService = tokenService;
@@ -68,6 +71,14 @@ namespace MealManagement.Service.Services
             foreach (var invitation in invitations)
                 user.ParticipatingMeals.Add(invitation.Meal);
             _invitations.RemoveRange(invitations);
+
+            // מנות שבעלת הארוחה שיבצה לאימייל הזה לפני ההרשמה עוברות אליה
+            var pendingAssignments = await _assignments.GetPendingByEmailAsync(email, ct);
+            foreach (var assignment in pendingAssignments)
+            {
+                assignment.User = user;
+                assignment.PendingEmail = null;
+            }
 
             // שמירה אחת: המשתמשת, ההשתתפויות ומחיקת ההזמנות יחד
             await _unitOfWork.SaveChangesAsync(ct);

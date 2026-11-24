@@ -1891,14 +1891,20 @@ namespace MealManagement.Data.Migrations
                     b.Property<int>("MealDishId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("PendingEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
                     b.Property<double>("Quantity")
                         .HasPrecision(10, 2)
                         .HasColumnType("double precision");
 
-                    b.Property<int>("UserId")
+                    b.Property<int?>("UserId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PendingEmail");
 
                     b.HasIndex("UserId");
 
@@ -2075,8 +2081,7 @@ namespace MealManagement.Data.Migrations
                     b.HasOne("MealManagement.Core.Entities.User", "User")
                         .WithMany("Assignments")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("MealDish");
 

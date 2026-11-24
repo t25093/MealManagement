@@ -1,4 +1,4 @@
-﻿using MealManagement.Core.Entities;
+using MealManagement.Core.Entities;
 using MealManagement.Core.Enums;
 using MealManagement.Core.Services;
 using MealManagement.Data;
@@ -30,6 +30,7 @@ namespace MealManagement.Tests.Integration
             return new UserService(
                 new UserRepository(context),
                 new MealInvitationRepository(context),
+                new UserDishAssignmentRepository(context),
                 new UnitOfWork(context),
                 Mock.Of<IPasswordHasher>(),
                 Mock.Of<ITokenService>(),

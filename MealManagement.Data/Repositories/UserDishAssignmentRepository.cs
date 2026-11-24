@@ -22,6 +22,19 @@ namespace MealManagement.Data.Repositories
                 .FirstOrDefaultAsync(a => a.Id == assignmentId, ct);
         }
 
+        public async Task<UserDishAssignment?> GetByMealDishAndPendingEmailAsync(int mealDishId, string email, CancellationToken ct = default)
+        {
+            return await _context.UserDishAssignments
+                .FirstOrDefaultAsync(a => a.MealDishId == mealDishId && a.UserId == null && a.PendingEmail == email, ct);
+        }
+
+        public async Task<List<UserDishAssignment>> GetPendingByEmailAsync(string email, CancellationToken ct = default)
+        {
+            return await _context.UserDishAssignments
+                .Where(a => a.UserId == null && a.PendingEmail == email)
+                .ToListAsync(ct);
+        }
+
         public async Task<UserDishAssignment?> GetByMealDishAndUserAsync(int mealDishId, int userId, CancellationToken ct = default)
         {
             return await _context.UserDishAssignments

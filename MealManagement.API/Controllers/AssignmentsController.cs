@@ -40,6 +40,18 @@ namespace MealManagement.API.Controllers
             return Ok(await _assignments.GetByMealAsync(mealId, User.GetUserId(), ct));
         }
 
+        // מייל אחד לכל משובצת עם כל המנות שלה (בעלת הארוחה)
+        [HttpPost("assignments/notify")]
+        [ProducesResponseType(typeof(NotifyAssigneesResultDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<NotifyAssigneesResultDto>> Notify(int mealId, CancellationToken ct)
+        {
+            var sent = await _assignments.NotifyAssigneesAsync(mealId, User.GetUserId(), User.IsInRole("Admin"), ct);
+            return Ok(new NotifyAssigneesResultDto { Sent = sent });
+        }
+
         [HttpDelete("assignments/{assignmentId:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]

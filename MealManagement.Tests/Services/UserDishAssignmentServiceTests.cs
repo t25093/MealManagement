@@ -223,10 +223,6 @@ namespace MealManagement.Tests.Services
             var result = await _service.TakeAsync(MealId, MealDishId, dto, AdminId, isAdmin: true);
 
             Assert.Equal(ParticipantId, result.UserId);
-            _emails.Verify(e => e.SendDishAssignedAsync(
-                    It.Is<User>(u => u.Id == ParticipantId), It.IsAny<Meal>(), It.IsAny<Dish>(), 10,
-                    It.IsAny<string>(), It.IsAny<CancellationToken>()),
-                Times.Once);
             _assignments.Verify(a => a.AddAsync(
                     It.Is<UserDishAssignment>(x => x.UserId == ParticipantId && x.Quantity == 10),
                     It.IsAny<CancellationToken>()),
@@ -237,6 +233,8 @@ namespace MealManagement.Tests.Services
         public async Task TakeAsync_AdminAssignsUnknownEmail_ThrowsNotFound()
         {
             ArrangeMealDish(required: 60, assigned: 20);
+            _meals.Setup(m => m.GetForUpdateAsync(MealId, It.IsAny<CancellationToken>()))
+                  .ReturnsAsync(new Meal { Id = MealId, OwnerId = OwnerId });
 
             var dto = new CreateAssignmentDto { Quantity = 10, AssignToEmail = "nobody@example.com" };
 
@@ -256,6 +254,61 @@ namespace MealManagement.Tests.Services
             var result = await _service.TakeAsync(MealId, MealDishId, dto, OwnerId);
 
             Assert.Equal(ParticipantId, result.UserId);
+        }
+
+        [Fact]
+        public async Task TakeAsync_OwnerAssignsInvitedButNotRegistered_SavesPendingAssignment()
+        {
+            ArrangeMealDish(required: 60, assigned: 20);
+            var meal = new Meal { Id = MealId, OwnerId = OwnerId };
+            meal.Invitations.Add(new MealInvitation { Email = "guest@example.com" });
+            _meals.Setup(m => m.GetForUpdateAsync(MealId, It.IsAny<CancellationToken>())).ReturnsAsync(meal);
+
+            var dto = new CreateAssignmentDto { Quantity = 10, AssignToEmail = "Guest@Example.com" };
+            var result = await _service.TakeAsync(MealId, MealDishId, dto, OwnerId);
+
+            Assert.True(result.IsPending);
+            Assert.Equal("guest@example.com", result.UserName);
+            _assignments.Verify(a => a.AddAsync(
+                    It.Is<UserDishAssignment>(x => x.UserId == null && x.PendingEmail == "guest@example.com" && x.Quantity == 10),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task NotifyAssigneesAsync_SendsOneEmailPerPersonWithAllHerDishes()
+        {
+            var meal = new Meal { Id = MealId, OwnerId = OwnerId, Name = "שבת" };
+            _meals.Setup(m => m.GetDetailsAsync(MealId, It.IsAny<CancellationToken>())).ReturnsAsync(meal);
+
+            MealDish Md(string name) => new() { MealId = MealId, Dish = new Dish { Name = name, Unit = MeasureUnit.Portion } };
+            var dana = new User { Id = ParticipantId, Email = "dana@example.com", FullName = "דנה" };
+            _assignments.Setup(a => a.GetByMealAsync(MealId, It.IsAny<CancellationToken>())).ReturnsAsync(new List<UserDishAssignment>
+            {
+                new() { UserId = ParticipantId, User = dana, MealDish = Md("קוגל"), Quantity = 2 },
+                new() { UserId = ParticipantId, User = dana, MealDish = Md("סלט"), Quantity = 1 },
+                new() { UserId = null, PendingEmail = "guest@example.com", MealDish = Md("עוגה"), Quantity = 1 },
+                new() { UserId = OwnerId, User = new User { Id = OwnerId, Email = "owner@example.com" }, MealDish = Md("חלות"), Quantity = 4 },
+            });
+
+            var sent = await _service.NotifyAssigneesAsync(MealId, OwnerId);
+
+            Assert.Equal(2, sent);
+            _emails.Verify(e => e.SendDishesAssignedAsync("dana@example.com", "דנה", false, meal,
+                    It.Is<IReadOnlyList<AssignedDishItem>>(l => l.Count == 2), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+            _emails.Verify(e => e.SendDishesAssignedAsync("guest@example.com", null, true, meal,
+                    It.Is<IReadOnlyList<AssignedDishItem>>(l => l.Count == 1), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task NotifyAssigneesAsync_ByParticipant_ThrowsForbidden()
+        {
+            _meals.Setup(m => m.GetDetailsAsync(MealId, It.IsAny<CancellationToken>()))
+                  .ReturnsAsync(new Meal { Id = MealId, OwnerId = OwnerId });
+
+            await Assert.ThrowsAsync<ForbiddenException>(() => _service.NotifyAssigneesAsync(MealId, ParticipantId));
         }
 
         [Fact]
