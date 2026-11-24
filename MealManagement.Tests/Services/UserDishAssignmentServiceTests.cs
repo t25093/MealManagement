@@ -246,7 +246,20 @@ namespace MealManagement.Tests.Services
         }
 
         [Fact]
-        public async Task TakeAsync_NonAdminAssignsByEmail_ThrowsForbidden()
+        public async Task TakeAsync_MealOwnerAssignsByEmail_CreatesAssignmentForThatUser()
+        {
+            ArrangeMealDish(required: 60, assigned: 20);
+            _users.Setup(u => u.GetByEmailAsync("dana@example.com", It.IsAny<CancellationToken>()))
+                  .ReturnsAsync(new User { Id = ParticipantId, Email = "dana@example.com" });
+
+            var dto = new CreateAssignmentDto { Quantity = 10, AssignToEmail = "dana@example.com" };
+            var result = await _service.TakeAsync(MealId, MealDishId, dto, OwnerId);
+
+            Assert.Equal(ParticipantId, result.UserId);
+        }
+
+        [Fact]
+        public async Task TakeAsync_ParticipantAssignsByEmail_ThrowsForbidden()
         {
             ArrangeMealDish(required: 60, assigned: 20);
 

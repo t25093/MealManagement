@@ -55,13 +55,14 @@ namespace MealManagement.Service.Services
             if (mealDish == null || mealDish.MealId != mealId)
                 throw new NotFoundException("המנה לא נמצאה בארוחה הזו");
 
-            // 2. הרשאה: בעלת הארוחה או משתתפת. מנהלת המערכת יכולה לשבץ כל משתמשת לפי אימייל
+            // 2. הרשאה: בעלת הארוחה או משתתפת.
+            //    בעלת הארוחה (או עורכת, או מנהלת המערכת) יכולה לשבץ משתמשת אחרת לפי אימייל
             var assigneeId = currentUserId;
 
             if (!string.IsNullOrWhiteSpace(dto.AssignToEmail))
             {
-                if (!isAdmin)
-                    throw new ForbiddenException("רק מנהלת המערכת יכולה לשבץ משתמשת אחרת");
+                if (!isAdmin && !MealPermissions.CanEdit(mealDish.Meal, currentUserId))
+                    throw new ForbiddenException("רק בעלת הארוחה יכולה לשבץ משתמשת אחרת");
 
                 assigneeId = await ResolveAssigneeAsync(mealId, dto.AssignToEmail, ct);
             }
@@ -117,7 +118,7 @@ namespace MealManagement.Service.Services
             {
                 var assigner = await _users.GetByIdAsync(currentUserId, ct);
                 await _emails.SendDishAssignedAsync(user, mealDish.Meal, mealDish.Dish, dto.Quantity,
-                    assigner?.FullName ?? "מנהלת המערכת", ct);
+                    assigner?.FullName ?? "בעלת הארוחה", ct);
             }
 
             return result;
@@ -151,7 +152,7 @@ namespace MealManagement.Service.Services
             var isOwnAssignment = assignment.UserId == currentUserId;
             var isMealOwner = assignment.MealDish.Meal.OwnerId == currentUserId;
 
-            if (!isOwnAssignment && !isMealOwner && !isAdmin)
+            if (!isOwnAssignment && !isMealOwner && !isAdmin && !MealPermissions.CanEdit(assignment.MealDish.Meal, currentUserId))
                 throw new ForbiddenException("אפשר לבטל רק לקיחה שלך");
 
             // החזרת הכמות למנה. גם זה עדכון של MealDish, ולכן מוגן ב-xmin

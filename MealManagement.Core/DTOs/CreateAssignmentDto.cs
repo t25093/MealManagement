@@ -14,7 +14,7 @@ namespace MealManagement.Core.DTOs
         // למנה בלתי מוגדרת בלבד: הוספת מאכל חדש למאגר
         public CreateDishDto? NewDish { get; set; }
 
-        // מנהלת המערכת בלבד: שיבוץ משתמשת אחרת לפי האימייל שלה
+        // בעלת הארוחה (או עורכת, או מנהלת המערכת): שיבוץ משתמשת אחרת לפי האימייל שלה
         [EmailAddress(ErrorMessage = "כתובת האימייל אינה תקינה")]
         public string? AssignToEmail { get; set; }
     }

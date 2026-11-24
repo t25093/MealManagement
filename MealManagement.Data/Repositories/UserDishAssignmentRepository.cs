@@ -1,4 +1,4 @@
-﻿using MealManagement.Core.Entities;
+using MealManagement.Core.Entities;
 using MealManagement.Core.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +18,7 @@ namespace MealManagement.Data.Repositories
             return await _context.UserDishAssignments
                 .Include(a => a.MealDish)
                     .ThenInclude(md => md.Meal)
+                        .ThenInclude(m => m.Editors) // עורכת יכולה לבטל שיבוץ של אחרת
                 .FirstOrDefaultAsync(a => a.Id == assignmentId, ct);
         }
 
