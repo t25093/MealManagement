@@ -203,5 +203,66 @@ namespace MealManagement.Tests.Services
             Assert.Equal(2, mealDish.AssignedQuantity);
             _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
+
+        // ===== שיבוץ לפי אימייל (מנהלת המערכת) =====
+
+        private const int AdminId = 50;
+
+        [Fact]
+        public async Task TakeAsync_AdminAssignsByEmail_CreatesAssignmentForThatUser()
+        {
+            ArrangeMealDish(required: 60, assigned: 20);
+            _users.Setup(u => u.GetByEmailAsync("dana@example.com", It.IsAny<CancellationToken>()))
+                  .ReturnsAsync(new User { Id = ParticipantId, Email = "dana@example.com" });
+
+            var dto = new CreateAssignmentDto { Quantity = 10, AssignToEmail = " Dana@Example.com " };
+            var result = await _service.TakeAsync(MealId, MealDishId, dto, AdminId, isAdmin: true);
+
+            Assert.Equal(ParticipantId, result.UserId);
+            _assignments.Verify(a => a.AddAsync(
+                    It.Is<UserDishAssignment>(x => x.UserId == ParticipantId && x.Quantity == 10),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task TakeAsync_AdminAssignsUnknownEmail_ThrowsNotFound()
+        {
+            ArrangeMealDish(required: 60, assigned: 20);
+
+            var dto = new CreateAssignmentDto { Quantity = 10, AssignToEmail = "nobody@example.com" };
+
+            await Assert.ThrowsAsync<NotFoundException>(() =>
+                _service.TakeAsync(MealId, MealDishId, dto, AdminId, isAdmin: true));
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task TakeAsync_NonAdminAssignsByEmail_ThrowsForbidden()
+        {
+            ArrangeMealDish(required: 60, assigned: 20);
+
+            var dto = new CreateAssignmentDto { Quantity = 10, AssignToEmail = "dana@example.com" };
+
+            await Assert.ThrowsAsync<ForbiddenException>(() =>
+                _service.TakeAsync(MealId, MealDishId, dto, ParticipantId));
+        }
+
+        [Fact]
+        public async Task TakeAsync_AdminAssignsUserNotInMeal_AddsHerAsParticipant()
+        {
+            const int outsiderId = 77;
+            ArrangeMealDish(required: 60, assigned: 20);
+            _users.Setup(u => u.GetByEmailAsync("new@example.com", It.IsAny<CancellationToken>()))
+                  .ReturnsAsync(new User { Id = outsiderId, Email = "new@example.com" });
+            _meals.Setup(m => m.HasAccessAsync(MealId, outsiderId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            var meal = new Meal { Id = MealId, OwnerId = OwnerId };
+            _meals.Setup(m => m.GetForUpdateAsync(MealId, It.IsAny<CancellationToken>())).ReturnsAsync(meal);
+
+            var dto = new CreateAssignmentDto { Quantity = 10, AssignToEmail = "new@example.com" };
+            await _service.TakeAsync(MealId, MealDishId, dto, AdminId, isAdmin: true);
+
+            Assert.Contains(meal.Participants, p => p.Id == outsiderId);
+        }
     }
 }

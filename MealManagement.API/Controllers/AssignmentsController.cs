@@ -1,4 +1,4 @@
-﻿using MealManagement.API.Extensions;
+using MealManagement.API.Extensions;
 using MealManagement.Core.DTOs;
 using MealManagement.Core.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -27,7 +27,7 @@ namespace MealManagement.API.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
         public async Task<ActionResult<AssignmentDto>> Take(int mealId, int mealDishId, CreateAssignmentDto dto, CancellationToken ct)
         {
-            var assignment = await _assignments.TakeAsync(mealId, mealDishId, dto, User.GetUserId(), ct);
+            var assignment = await _assignments.TakeAsync(mealId, mealDishId, dto, User.GetUserId(), User.IsInRole("Admin"), ct);
             return CreatedAtAction(nameof(GetByMeal), new { mealId }, assignment);
         }
 
@@ -47,7 +47,7 @@ namespace MealManagement.API.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
         public async Task<IActionResult> Cancel(int mealId, int assignmentId, CancellationToken ct)
         {
-            await _assignments.CancelAsync(mealId, assignmentId, User.GetUserId(), ct);
+            await _assignments.CancelAsync(mealId, assignmentId, User.GetUserId(), User.IsInRole("Admin"), ct);
             return NoContent();
         }
     }

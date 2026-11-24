@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MealManagement.Core.DTOs;
 using MealManagement.Core.Entities;
 using MealManagement.Core.Exceptions;
@@ -44,7 +44,7 @@ namespace MealManagement.Service.Services
 
         // ===== צעד 1 + 2: לקיחת מנה (כולל בחירת מאכל למנה בלתי מוגדרת) =====
 
-        public async Task<AssignmentDto> TakeAsync(int mealId, int mealDishId, CreateAssignmentDto dto, int currentUserId, CancellationToken ct = default)
+        public async Task<AssignmentDto> TakeAsync(int mealId, int mealDishId, CreateAssignmentDto dto, int currentUserId, bool isAdmin = false, CancellationToken ct = default)
         {
             // 1. טעינה עם מעקב: ערך ה-xmin המקורי נשמר
             var mealDish = await _mealDishes.GetForUpdateAsync(mealDishId, ct);
@@ -52,9 +52,20 @@ namespace MealManagement.Service.Services
             if (mealDish == null || mealDish.MealId != mealId)
                 throw new NotFoundException("המנה לא נמצאה בארוחה הזו");
 
-            // 2. הרשאה: בעלת הארוחה או משתתפת
-            if (!await _meals.HasAccessAsync(mealId, currentUserId, ct))
+            // 2. הרשאה: בעלת הארוחה או משתתפת. מנהלת המערכת יכולה לשבץ כל משתמשת לפי אימייל
+            var assigneeId = currentUserId;
+
+            if (!string.IsNullOrWhiteSpace(dto.AssignToEmail))
+            {
+                if (!isAdmin)
+                    throw new ForbiddenException("רק מנהלת המערכת יכולה לשבץ משתמשת אחרת");
+
+                assigneeId = await ResolveAssigneeAsync(mealId, dto.AssignToEmail, ct);
+            }
+            else if (!await _meals.HasAccessAsync(mealId, currentUserId, ct))
+            {
                 throw new ForbiddenException("רק משתתפות בארוחה יכולות לקחת מנות");
+            }
 
             // 3. מנה בלתי מוגדרת: קודם בוחרים מאכל
             if (mealDish.DishId == null)
@@ -69,7 +80,7 @@ namespace MealManagement.Service.Services
             // 5. עדכון בזיכרון
             mealDish.AssignedQuantity += dto.Quantity;
 
-            var assignment = await _assignments.GetByMealDishAndUserAsync(mealDish.Id, currentUserId, ct);
+            var assignment = await _assignments.GetByMealDishAndUserAsync(mealDish.Id, assigneeId, ct);
 
             if (assignment != null)
             {
@@ -80,7 +91,7 @@ namespace MealManagement.Service.Services
                 assignment = new UserDishAssignment
                 {
                     MealDish = mealDish,
-                    UserId = currentUserId,
+                    UserId = assigneeId,
                     Quantity = dto.Quantity,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -92,10 +103,10 @@ namespace MealManagement.Service.Services
 
             _logger.LogInformation(
                 "User {UserId} took {Quantity} of MealDish {MealDishId} in meal {MealId}",
-                currentUserId, dto.Quantity, mealDish.Id, mealId);
+                assigneeId, dto.Quantity, mealDish.Id, mealId);
 
             var result = _mapper.Map<AssignmentDto>(assignment);
-            var user = await _users.GetByIdAsync(currentUserId, ct);
+            var user = await _users.GetByIdAsync(assigneeId, ct);
             result.UserName = user?.FullName ?? string.Empty;
             return result;
         }
@@ -118,7 +129,7 @@ namespace MealManagement.Service.Services
 
         // ===== צעד 3: ביטול לקיחה =====
 
-        public async Task CancelAsync(int mealId, int assignmentId, int currentUserId, CancellationToken ct = default)
+        public async Task CancelAsync(int mealId, int assignmentId, int currentUserId, bool isAdmin = false, CancellationToken ct = default)
         {
             var assignment = await _assignments.GetForUpdateAsync(assignmentId, ct);
 
@@ -128,7 +139,7 @@ namespace MealManagement.Service.Services
             var isOwnAssignment = assignment.UserId == currentUserId;
             var isMealOwner = assignment.MealDish.Meal.OwnerId == currentUserId;
 
-            if (!isOwnAssignment && !isMealOwner)
+            if (!isOwnAssignment && !isMealOwner && !isAdmin)
                 throw new ForbiddenException("אפשר לבטל רק לקיחה שלך");
 
             // החזרת הכמות למנה. גם זה עדכון של MealDish, ולכן מוגן ב-xmin
@@ -141,6 +152,28 @@ namespace MealManagement.Service.Services
             _logger.LogInformation(
                 "Assignment {AssignmentId} cancelled by user {UserId}, returned {Quantity} to MealDish {MealDishId}",
                 assignmentId, currentUserId, assignment.Quantity, assignment.MealDishId);
+        }
+
+        // ===== פונקציית עזר: המשתמשת שמנהלת המערכת משבצת לפי אימייל =====
+
+        private async Task<int> ResolveAssigneeAsync(int mealId, string email, CancellationToken ct)
+        {
+            var normalized = EmailAddresses.Normalize(email);
+
+            var user = await _users.GetByEmailAsync(normalized, ct)
+                ?? throw new NotFoundException($"לא נמצאה משתמשת רשומה עם האימייל {normalized}");
+
+            // משתמשת שעוד לא בארוחה מצורפת אליה כמשתתפת, כדי שתראה את המנה
+            if (!await _meals.HasAccessAsync(mealId, user.Id, ct))
+            {
+                var meal = await _meals.GetForUpdateAsync(mealId, ct)
+                    ?? throw new NotFoundException("הארוחה לא נמצאה");
+                var participant = await _users.GetByIdAsync(user.Id, ct)
+                    ?? throw new NotFoundException("המשתמשת לא נמצאה");
+                meal.Participants.Add(participant);
+            }
+
+            return user.Id;
         }
 
         // ===== פונקציית עזר: בחירת מאכל למנה בלתי מוגדרת =====
