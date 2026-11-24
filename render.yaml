@@ -1,10 +1,5 @@
-# Blueprint ל-Render: שרת API, מסד נתונים ואתר הלקוח, הכול במסלול החינמי
-databases:
-  - name: meal-management-db
-    plan: free
-    databaseName: meal_management
-    user: meal_management
-    postgresMajorVersion: "16"
+# Blueprint ל-Render: שרת API ואתר הלקוח במסלול החינמי.
+# מסד הנתונים נמצא ב-Neon, וכתובת החיבור מוזנת ידנית ב-Environment של השרת.
 
 services:
   # ===== שרת ה-API (Docker) =====
@@ -15,9 +10,7 @@ services:
     dockerfilePath: ./Dockerfile
     envVars:
       - key: ConnectionStrings__Default
-        fromDatabase:
-          name: meal-management-db
-          property: connectionString
+        sync: false   # הכתובת מ-Neon, מוזנת ידנית ב-Render ולא נשמרת ב-GitHub
       - key: Jwt__Key
         generateValue: true
       - key: Cors__ClientUrl
