@@ -16,6 +16,7 @@ namespace MealManagement.Service.Services
         private readonly IMealRepository _meals;
         private readonly IUserRepository _users;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IChatTypingStore _typing;
         private readonly IMapper _mapper;
         private readonly ILogger<ChatService> _logger;
 
@@ -24,6 +25,7 @@ namespace MealManagement.Service.Services
             IMealRepository meals,
             IUserRepository users,
             IUnitOfWork unitOfWork,
+            IChatTypingStore typing,
             IMapper mapper,
             ILogger<ChatService> logger)
         {
@@ -31,6 +33,7 @@ namespace MealManagement.Service.Services
             _meals = meals;
             _users = users;
             _unitOfWork = unitOfWork;
+            _typing = typing;
             _mapper = mapper;
             _logger = logger;
         }
@@ -73,6 +76,9 @@ namespace MealManagement.Service.Services
             await _messages.AddAsync(message, ct);
             await _unitOfWork.SaveChangesAsync(ct);
 
+            // ההודעה נשלחה: הטקסט שהוצג בזמן ההקלדה כבר לא רלוונטי
+            _typing.Clear(mealId, currentUserId);
+
             _logger.LogInformation("Message {MessageId} sent to meal {MealId} by user {UserId}",
                 message.Id, mealId, currentUserId);
 
@@ -80,6 +86,28 @@ namespace MealManagement.Service.Services
             var sender = await _users.GetByIdAsync(currentUserId, ct);
             result.SenderName = sender?.FullName ?? string.Empty;
             return result;
+        }
+
+        public async Task SetTypingAsync(int mealId, string? text, int currentUserId, CancellationToken ct = default)
+        {
+            await EnsureAccessAsync(mealId, currentUserId, ct);
+
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                _typing.Clear(mealId, currentUserId);
+                return;
+            }
+
+            var user = await _users.GetByIdAsync(currentUserId, ct)
+                ?? throw new NotFoundException("המשתמשת לא נמצאה");
+
+            _typing.Set(mealId, currentUserId, user.FullName, text);
+        }
+
+        public async Task<List<TypingStatusDto>> GetTypingAsync(int mealId, int currentUserId, CancellationToken ct = default)
+        {
+            await EnsureAccessAsync(mealId, currentUserId, ct);
+            return _typing.GetActive(mealId, currentUserId);
         }
 
         private async Task EnsureAccessAsync(int mealId, int currentUserId, CancellationToken ct)

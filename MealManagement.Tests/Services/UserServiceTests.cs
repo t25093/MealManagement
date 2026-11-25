@@ -280,5 +280,136 @@ namespace MealManagement.Tests.Services
             Assert.Equal("guest@test.com", pending.User!.Email);
             Assert.Null(pending.PendingEmail);
         }
+
+        // ===== עריכת פרופיל =====
+
+        private User ExistingUser() => new()
+        {
+            Id = 5,
+            FullName = "דינה",
+            Email = "dina@test.com",
+            PasswordHash = "hash",
+            Role = UserRole.User,
+            PasswordResetTokenHash = "reset",
+            PasswordResetExpiresAt = DateTime.UtcNow.AddMinutes(30)
+        };
+
+        private void SetupProfileUser(User user)
+        {
+            _users.Setup(u => u.GetWithParticipationsAsync(user.Id, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+            _tokenService.Setup(t => t.CreateToken(It.IsAny<UserDto>()))
+                         .Returns((UserDto dto) => new AuthResponseDto { Token = "new-token", User = dto });
+            _invitations.Setup(i => i.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<MealInvitation>());
+        }
+
+        [Fact]
+        public async Task UpdateProfileAsync_NameOnly_SavesWithoutPasswordAndReturnsNewToken()
+        {
+            var user = ExistingUser();
+            SetupProfileUser(user);
+
+            // אותו אימייל באותיות גדולות וברווחים: לא נחשב שינוי, ולכן לא צריך סיסמה
+            var result = await _service.UpdateProfileAsync(5, new UpdateProfileDto { FullName = "  דינה כהן ", Email = " Dina@Test.com" });
+
+            Assert.Equal("דינה כהן", user.FullName);
+            Assert.Equal("dina@test.com", user.Email);
+            Assert.Equal("new-token", result.Token);
+            Assert.Equal("דינה כהן", result.User.FullName);
+            Assert.Equal("reset", user.PasswordResetTokenHash); // האימייל לא השתנה: קישור האיפוס נשאר
+            _passwordHasher.Verify(h => h.Verify(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("wrong")]
+        public async Task UpdateProfileAsync_EmailChangedWithoutCorrectPassword_ThrowsAndDoesNotSave(string? password)
+        {
+            var user = ExistingUser();
+            SetupProfileUser(user);
+            _passwordHasher.Setup(h => h.Verify("wrong", "hash")).Returns(false);
+
+            await Assert.ThrowsAsync<BusinessRuleException>(() => _service.UpdateProfileAsync(5,
+                new UpdateProfileDto { FullName = "דינה", Email = "new@test.com", CurrentPassword = password }));
+
+            Assert.Equal("dina@test.com", user.Email);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task UpdateProfileAsync_EmailTaken_ThrowsConflictAndDoesNotSave()
+        {
+            var user = ExistingUser();
+            SetupProfileUser(user);
+            _passwordHasher.Setup(h => h.Verify("123456", "hash")).Returns(true);
+            _users.Setup(u => u.EmailExistsAsync("rachel@test.com", It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+            await Assert.ThrowsAsync<ConflictException>(() => _service.UpdateProfileAsync(5,
+                new UpdateProfileDto { FullName = "דינה", Email = "Rachel@Test.com", CurrentPassword = "123456" }));
+
+            Assert.Equal("dina@test.com", user.Email);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task UpdateProfileAsync_EmailChanged_SavesNormalizedEmailClearsResetLinkAndJoinsInvitedMeals()
+        {
+            var user = ExistingUser();
+            var alreadyIn = new Meal { Id = 1, OwnerId = 9 };
+            user.ParticipatingMeals.Add(alreadyIn);
+            SetupProfileUser(user);
+            _passwordHasher.Setup(h => h.Verify("123456", "hash")).Returns(true);
+
+            var newMeal = new Meal { Id = 2, OwnerId = 9 };
+            var invitations = new List<MealInvitation>
+            {
+                new() { MealId = 1, Meal = alreadyIn, Email = "new@test.com" },
+                new() { MealId = 2, Meal = newMeal, Email = "new@test.com" }
+            };
+            _invitations.Setup(i => i.GetByEmailAsync("new@test.com", It.IsAny<CancellationToken>())).ReturnsAsync(invitations);
+
+            await _service.UpdateProfileAsync(5,
+                new UpdateProfileDto { FullName = "דינה", Email = " New@Test.com ", CurrentPassword = "123456" });
+
+            Assert.Equal("new@test.com", user.Email);
+            Assert.Null(user.PasswordResetTokenHash);
+            Assert.Null(user.PasswordResetExpiresAt);
+            // הארוחה החדשה נוספה, וארוחה שכבר משתתפת בה לא נוספה פעמיים
+            Assert.Equal(new[] { 1, 2 }, user.ParticipatingMeals.Select(m => m.Id).OrderBy(id => id));
+            _invitations.Verify(i => i.RemoveRange(invitations), Times.Once);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateProfileAsync_EmailChanged_PendingAssignmentsMoveOrMergeIntoExisting()
+        {
+            var user = ExistingUser();
+            SetupProfileUser(user);
+            _passwordHasher.Setup(h => h.Verify("123456", "hash")).Returns(true);
+
+            var pendingNew = new UserDishAssignment { MealDishId = 10, PendingEmail = "new@test.com", Quantity = 2 };
+            var pendingSameDish = new UserDishAssignment { MealDishId = 11, PendingEmail = "new@test.com", Quantity = 3 };
+            var existing = new UserDishAssignment { MealDishId = 11, UserId = 5, Quantity = 1 };
+            _assignments.Setup(a => a.GetPendingByEmailAsync("new@test.com", It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<UserDishAssignment> { pendingNew, pendingSameDish });
+            _assignments.Setup(a => a.GetByMealDishAndUserAsync(11, 5, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+
+            await _service.UpdateProfileAsync(5,
+                new UpdateProfileDto { FullName = "דינה", Email = "new@test.com", CurrentPassword = "123456" });
+
+            Assert.Equal(5, pendingNew.UserId);
+            Assert.Null(pendingNew.PendingEmail);
+            Assert.Equal(4, existing.Quantity);
+            _assignments.Verify(a => a.Remove(pendingSameDish), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateProfileAsync_UnknownUser_ThrowsNotFound()
+        {
+            await Assert.ThrowsAsync<NotFoundException>(() =>
+                _service.UpdateProfileAsync(77, new UpdateProfileDto { FullName = "דינה", Email = "dina@test.com" }));
+        }
     }
 }

@@ -112,6 +112,81 @@ namespace MealManagement.Service.Services
             return _mapper.Map<UserDto>(user);
         }
 
+        public async Task<AuthResponseDto> UpdateProfileAsync(int userId, UpdateProfileDto dto, CancellationToken ct = default)
+        {
+            var user = await _users.GetWithParticipationsAsync(userId, ct)
+                ?? throw new NotFoundException("המשתמשת לא נמצאה");
+
+            var fullName = dto.FullName.Trim();
+            if (fullName.Length == 0)
+                throw new BusinessRuleException("יש להזין שם מלא");
+
+            var email = NormalizeEmail(dto.Email);
+            var emailChanged = email != user.Email;
+
+            if (emailChanged)
+            {
+                // אימות שזו באמת היא, לפני שמשנים את כתובת ההתחברות.
+                // לא UnauthorizedException: 401 מנתק את המשתמשת באתר
+                if (string.IsNullOrEmpty(dto.CurrentPassword))
+                    throw new BusinessRuleException("כדי לשנות אימייל יש להזין את הסיסמה הנוכחית");
+
+                if (!_passwordHasher.Verify(dto.CurrentPassword, user.PasswordHash))
+                    throw new BusinessRuleException("הסיסמה הנוכחית שגויה");
+
+                if (await _users.EmailExistsAsync(email, ct))
+                    throw new ConflictException("כתובת האימייל כבר רשומה במערכת");
+
+                user.Email = email;
+
+                // קישור לאיפוס סיסמה שנשלח לאימייל הקודם כבר לא תקף
+                user.PasswordResetTokenHash = null;
+                user.PasswordResetExpiresAt = null;
+
+                await ClaimInvitationsAsync(user, email, ct);
+            }
+
+            user.FullName = fullName;
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            _logger.LogInformation("User {UserId} updated profile (email changed: {EmailChanged})", user.Id, emailChanged);
+
+            return _tokenService.CreateToken(_mapper.Map<UserDto>(user));
+        }
+
+        // כמו בהרשמה: הזמנות ושיבוצים שחיכו לאימייל החדש עוברים למשתמשת.
+        // אחרת הם היו נשארים תקועים, כי אף אחת כבר לא תוכל להירשם עם האימייל הזה.
+        private async Task ClaimInvitationsAsync(User user, string email, CancellationToken ct)
+        {
+            var invitations = await _invitations.GetByEmailAsync(email, ct);
+            foreach (var invitation in invitations)
+            {
+                var alreadyIn = invitation.Meal.OwnerId == user.Id
+                    || user.ParticipatingMeals.Any(m => m.Id == invitation.MealId);
+                if (!alreadyIn)
+                    user.ParticipatingMeals.Add(invitation.Meal);
+            }
+            _invitations.RemoveRange(invitations);
+
+            var pendingAssignments = await _assignments.GetPendingByEmailAsync(email, ct);
+            foreach (var pending in pendingAssignments)
+            {
+                // אם כבר לקחה מהמנה הזאת, מחברים את הכמויות לשיבוץ אחד (אחד לכל מנה ומשתמשת)
+                var existing = await _assignments.GetByMealDishAndUserAsync(pending.MealDishId, user.Id, ct);
+                if (existing != null)
+                {
+                    existing.Quantity += pending.Quantity;
+                    _assignments.Remove(pending);
+                }
+                else
+                {
+                    pending.UserId = user.Id;
+                    pending.User = user;
+                    pending.PendingEmail = null;
+                }
+            }
+        }
+
         public async Task ForgotPasswordAsync(ForgotPasswordDto dto, CancellationToken ct = default)
         {
             var found = await _users.GetByEmailAsync(NormalizeEmail(dto.Email), ct);

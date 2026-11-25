@@ -28,6 +28,17 @@ namespace MealManagement.API.Controllers
             return Ok(await _users.GetByIdAsync(User.GetUserId(), ct));
         }
 
+        // עריכת השם והאימייל של המשתמשת המחוברת. שינוי אימייל דורש את הסיסמה הנוכחית.
+        // מחזיר token חדש, כי השם והאימייל שמורים גם בתוכו
+        [HttpPut("me")]
+        [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+        public async Task<ActionResult<AuthResponseDto>> UpdateMe(UpdateProfileDto dto, CancellationToken ct)
+        {
+            return Ok(await _users.UpdateProfileAsync(User.GetUserId(), dto, ct));
+        }
+
         [HttpGet]
         [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(typeof(PagedResult<UserDto>), StatusCodes.Status200OK)]

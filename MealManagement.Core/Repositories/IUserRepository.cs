@@ -6,6 +6,9 @@ namespace MealManagement.Core.Repositories
     public interface IUserRepository
     {
         Task<User?> GetByIdAsync(int id, CancellationToken ct = default);
+
+        // עם מעקב, כולל הארוחות שהיא משתתפת בהן: לעריכת הפרופיל (הזמנות לאימייל החדש)
+        Task<User?> GetWithParticipationsAsync(int id, CancellationToken ct = default);
         Task<User?> GetByEmailAsync(string email, CancellationToken ct = default);
         Task<bool> EmailExistsAsync(string email, CancellationToken ct = default);
 

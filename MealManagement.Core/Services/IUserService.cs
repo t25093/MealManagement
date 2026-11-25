@@ -8,6 +8,9 @@ namespace MealManagement.Core.Services
         Task<AuthResponseDto> LoginAsync(LoginDto dto, CancellationToken ct = default);
         Task<UserDto> GetByIdAsync(int userId, CancellationToken ct = default);
 
+        // עריכת שם ואימייל של המשתמשת המחוברת. מחזיר token חדש עם הפרטים המעודכנים
+        Task<AuthResponseDto> UpdateProfileAsync(int userId, UpdateProfileDto dto, CancellationToken ct = default);
+
         // שולח מייל עם קישור לאיפוס סיסמה. לא מגלה אם האימייל רשום במערכת
         Task ForgotPasswordAsync(ForgotPasswordDto dto, CancellationToken ct = default);
         Task ResetPasswordAsync(ResetPasswordDto dto, CancellationToken ct = default);

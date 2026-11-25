@@ -21,6 +21,13 @@ namespace MealManagement.Data.Repositories
                 .FirstOrDefaultAsync(u => u.Id == id, ct);
         }
 
+        public async Task<User?> GetWithParticipationsAsync(int id, CancellationToken ct = default)
+        {
+            return await _context.Users
+                .Include(u => u.ParticipatingMeals)
+                .FirstOrDefaultAsync(u => u.Id == id, ct);
+        }
+
         public async Task<User?> GetByEmailAsync(string email, CancellationToken ct = default)
         {
             return await _context.Users

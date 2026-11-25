@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using MealManagement.API.Extensions;
 using MealManagement.API.Middleware;
+using MealManagement.Core.Enums;
 using MealManagement.Core.Repositories;
 using MealManagement.Core.Services;
 using MealManagement.Core.Settings;
@@ -81,6 +82,8 @@ builder.Services.AddScoped<IMealService, MealService>();
 builder.Services.AddScoped<IMealDishService, MealDishService>();
 builder.Services.AddScoped<IUserDishAssignmentService, UserDishAssignmentService>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<IChatTypingStore, ChatTypingStore>(); // בזיכרון: משותף לכל הבקשות
 builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddScoped<IMealListItemService, MealListItemService>();
 
@@ -190,7 +193,8 @@ app.Services.GetRequiredService<IMapper>().ConfigurationProvider.AssertConfigura
     if (!string.IsNullOrWhiteSpace(adminPassword))
     {
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-        var admin = await db.Users.FirstOrDefaultAsync(u => u.Email == "admin@meals.local");
+        // לפי המזהה של המנהלת מה-Seed (1) ולא לפי האימייל, כי אפשר לשנות אימייל בפרופיל
+        var admin = await db.Users.FirstOrDefaultAsync(u => u.Id == 1 && u.Role == UserRole.Admin);
         if (admin != null && !hasher.Verify(adminPassword, admin.PasswordHash))
         {
             admin.PasswordHash = hasher.Hash(adminPassword);
