@@ -1847,6 +1847,9 @@ namespace MealManagement.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<bool>("ShowTypingText")
+                        .HasColumnType("boolean");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
@@ -1864,7 +1867,8 @@ namespace MealManagement.Data.Migrations
                             Email = "admin@meals.local",
                             FullName = "מנהלת המערכת",
                             PasswordHash = "$2b$11$XuY3CT.E4JB3LVUquipoXeaoDF8voHOA1hx6nBShMB6tZQfD.etxm",
-                            Role = "Admin"
+                            Role = "Admin",
+                            ShowTypingText = true
                         },
                         new
                         {
@@ -1873,7 +1877,8 @@ namespace MealManagement.Data.Migrations
                             Email = "user@meals.local",
                             FullName = "משתמשת לדוגמה",
                             PasswordHash = "$2b$11$bQ5cSLxZkd1tjqGEsgqKl.r88vIa6nBg2kTWoEbP.gLo8.v3UTCpa",
-                            Role = "User"
+                            Role = "User",
+                            ShowTypingText = true
                         });
                 });
 

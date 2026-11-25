@@ -29,7 +29,8 @@ namespace MealManagement.API.Controllers
             return Ok(await _chat.GetTypingAsync(mealId, User.GetUserId(), ct));
         }
 
-        // הטקסט שבשדה ההודעה כרגע. טקסט ריק = הפסיקה לכתוב
+        // הטקסט שבשדה ההודעה כרגע. טקסט ריק = הפסיקה לכתוב.
+        // משתמשת שמסתירה את הטקסט שולחת isTyping בלבד, והאחרות רואות רק שהיא כותבת
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -37,7 +38,7 @@ namespace MealManagement.API.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Update(int mealId, UpdateTypingDto dto, CancellationToken ct)
         {
-            await _chat.SetTypingAsync(mealId, dto.Text, User.GetUserId(), ct);
+            await _chat.SetTypingAsync(mealId, dto, User.GetUserId(), ct);
             return NoContent();
         }
     }

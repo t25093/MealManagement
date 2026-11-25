@@ -88,11 +88,12 @@ namespace MealManagement.Service.Services
             return result;
         }
 
-        public async Task SetTypingAsync(int mealId, string? text, int currentUserId, CancellationToken ct = default)
+        public async Task SetTypingAsync(int mealId, UpdateTypingDto dto, int currentUserId, CancellationToken ct = default)
         {
             await EnsureAccessAsync(mealId, currentUserId, ct);
 
-            if (string.IsNullOrWhiteSpace(text))
+            var hasText = !string.IsNullOrWhiteSpace(dto.Text);
+            if (!(dto.IsTyping ?? hasText))
             {
                 _typing.Clear(mealId, currentUserId);
                 return;
@@ -101,6 +102,8 @@ namespace MealManagement.Service.Services
             var user = await _users.GetByIdAsync(currentUserId, ct)
                 ?? throw new NotFoundException("המשתמשת לא נמצאה");
 
+            // משתמשת שבחרה להסתיר: נשמר רק שהיא כותבת, בלי הטקסט (גם אם דפדפן ישן שלח אותו)
+            var text = user.ShowTypingText && hasText ? dto.Text! : string.Empty;
             _typing.Set(mealId, currentUserId, user.FullName, text);
         }
 

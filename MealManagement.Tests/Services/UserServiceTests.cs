@@ -411,5 +411,27 @@ namespace MealManagement.Tests.Services
             await Assert.ThrowsAsync<NotFoundException>(() =>
                 _service.UpdateProfileAsync(77, new UpdateProfileDto { FullName = "דינה", Email = "dina@test.com" }));
         }
+
+        [Fact]
+        public async Task UpdatePreferencesAsync_HideTypingText_SavesAndReturnsIt()
+        {
+            var user = ExistingUser();
+            _users.Setup(u => u.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+
+            var result = await _service.UpdatePreferencesAsync(5, new UpdatePreferencesDto { ShowTypingText = false });
+
+            Assert.False(user.ShowTypingText);
+            Assert.False(result.ShowTypingText);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdatePreferencesAsync_UnknownUser_ThrowsNotFoundAndDoesNotSave()
+        {
+            await Assert.ThrowsAsync<NotFoundException>(() =>
+                _service.UpdatePreferencesAsync(77, new UpdatePreferencesDto { ShowTypingText = false }));
+
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
     }
 }

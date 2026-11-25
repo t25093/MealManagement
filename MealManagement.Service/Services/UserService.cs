@@ -154,6 +154,19 @@ namespace MealManagement.Service.Services
             return _tokenService.CreateToken(_mapper.Map<UserDto>(user));
         }
 
+        public async Task<UserDto> UpdatePreferencesAsync(int userId, UpdatePreferencesDto dto, CancellationToken ct = default)
+        {
+            var user = await _users.GetByIdAsync(userId, ct)
+                ?? throw new NotFoundException("המשתמשת לא נמצאה");
+
+            user.ShowTypingText = dto.ShowTypingText;
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            _logger.LogInformation("User {UserId} set ShowTypingText to {ShowTypingText}", user.Id, dto.ShowTypingText);
+
+            return _mapper.Map<UserDto>(user);
+        }
+
         // כמו בהרשמה: הזמנות ושיבוצים שחיכו לאימייל החדש עוברים למשתמשת.
         // אחרת הם היו נשארים תקועים, כי אף אחת כבר לא תוכל להירשם עם האימייל הזה.
         private async Task ClaimInvitationsAsync(User user, string email, CancellationToken ct)

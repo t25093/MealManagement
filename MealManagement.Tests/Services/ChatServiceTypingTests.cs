@@ -44,9 +44,45 @@ namespace MealManagement.Tests.Services
             _users.Setup(u => u.GetByIdAsync(2, It.IsAny<CancellationToken>()))
                   .ReturnsAsync(new User { Id = 2, FullName = "רחל לוי" });
 
-            await _service.SetTypingAsync(1, "כן, צריך", 2);
+            await _service.SetTypingAsync(1, new UpdateTypingDto { Text = "כן, צריך" }, 2);
 
             _typing.Verify(t => t.Set(1, 2, "רחל לוי", "כן, צריך"), Times.Once);
+        }
+
+        [Fact]
+        public async Task SetTypingAsync_UserHidesText_SavesOnlyThatSheIsTyping()
+        {
+            GiveAccess(1, 2);
+            _users.Setup(u => u.GetByIdAsync(2, It.IsAny<CancellationToken>()))
+                  .ReturnsAsync(new User { Id = 2, FullName = "רחל לוי", ShowTypingText = false });
+
+            // גם אם דפדפן ישן שלח את הטקסט, הוא לא נשמר
+            await _service.SetTypingAsync(1, new UpdateTypingDto { Text = "סוד" }, 2);
+
+            _typing.Verify(t => t.Set(1, 2, "רחל לוי", ""), Times.Once);
+        }
+
+        [Fact]
+        public async Task SetTypingAsync_IsTypingWithoutText_SavesOnlyThatSheIsTyping()
+        {
+            GiveAccess(1, 2);
+            _users.Setup(u => u.GetByIdAsync(2, It.IsAny<CancellationToken>()))
+                  .ReturnsAsync(new User { Id = 2, FullName = "רחל לוי", ShowTypingText = false });
+
+            await _service.SetTypingAsync(1, new UpdateTypingDto { IsTyping = true }, 2);
+
+            _typing.Verify(t => t.Set(1, 2, "רחל לוי", ""), Times.Once);
+        }
+
+        [Fact]
+        public async Task SetTypingAsync_IsTypingFalse_ClearsEvenWithText()
+        {
+            GiveAccess(1, 2);
+
+            await _service.SetTypingAsync(1, new UpdateTypingDto { Text = "abc", IsTyping = false }, 2);
+
+            _typing.Verify(t => t.Clear(1, 2), Times.Once);
+            _typing.Verify(t => t.Set(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Theory]
@@ -57,7 +93,7 @@ namespace MealManagement.Tests.Services
         {
             GiveAccess(1, 2);
 
-            await _service.SetTypingAsync(1, text, 2);
+            await _service.SetTypingAsync(1, new UpdateTypingDto { Text = text }, 2);
 
             _typing.Verify(t => t.Clear(1, 2), Times.Once);
             _typing.Verify(t => t.Set(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
@@ -68,7 +104,7 @@ namespace MealManagement.Tests.Services
         {
             _meals.Setup(m => m.ExistsAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-            await Assert.ThrowsAsync<ForbiddenException>(() => _service.SetTypingAsync(1, "שלום", 2));
+            await Assert.ThrowsAsync<ForbiddenException>(() => _service.SetTypingAsync(1, new UpdateTypingDto { Text = "שלום" }, 2));
 
             _typing.Verify(t => t.Set(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }

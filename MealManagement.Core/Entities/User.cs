@@ -19,6 +19,9 @@ namespace MealManagement.Core.Entities
         // איפוס סיסמה: נשמר רק ה-hash של הקוד שנשלח במייל, ועד מתי הוא תקף
         public string? PasswordResetTokenHash { get; set; }
         public DateTime? PasswordResetExpiresAt { get; set; }
+
+        // צ'אט: האם המשתתפות רואות את הטקסט שלה עוד לפני השליחה. אם לא, הן רואות רק שהיא כותבת
+        public bool ShowTypingText { get; set; } = true;
         public List<Meal> OwnedMeals { get; set; } = new();
         public List<Meal> ParticipatingMeals { get; set; } = new();
         public List<Meal> EditableMeals { get; set; } = new(); // ארוחות שקיבלה בהן הרשאת עריכה

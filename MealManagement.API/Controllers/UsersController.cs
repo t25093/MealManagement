@@ -39,6 +39,15 @@ namespace MealManagement.API.Controllers
             return Ok(await _users.UpdateProfileAsync(User.GetUserId(), dto, ct));
         }
 
+        // הגדרות אישיות של המשתמשת המחוברת. נשמרות בשרת, ולכן חלות בכל המכשירים שלה
+        [HttpPut("me/preferences")]
+        [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<UserDto>> UpdateMyPreferences(UpdatePreferencesDto dto, CancellationToken ct)
+        {
+            return Ok(await _users.UpdatePreferencesAsync(User.GetUserId(), dto, ct));
+        }
+
         [HttpGet]
         [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(typeof(PagedResult<UserDto>), StatusCodes.Status200OK)]
